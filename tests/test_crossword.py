@@ -125,3 +125,36 @@ def test_digitize_full_flow(temp_dir):
     with open(out_dir / "review.html") as f:
         html = f.read()
         assert "test_cw2.png" in html
+
+from docvert.crossword import validate_grid
+
+def test_validate_grid_symmetry():
+    # 5x5 grid, asymmetric
+    grid_data = [[{"blocked": False} for _ in range(5)] for _ in range(5)]
+    grid_data[0][0]["blocked"] = True
+    # If symmetric, grid_data[4][4] should be True. Leave it False.
+
+    issues = validate_grid(grid_data, 5, 5)
+
+    # 5x5 is non-standard
+    assert any("non-standard" in issue for issue in issues)
+    # Lacks symmetry
+    assert any("rotational symmetry" in issue for issue in issues)
+
+def test_validate_grid_orphans():
+    # 5x5 grid
+    grid_data = [[{"blocked": False} for _ in range(5)] for _ in range(5)]
+    # Create an orphan at (1,1) by blocking (0,1), (2,1), (1,0), (1,2)
+    grid_data[0][1]["blocked"] = True
+    grid_data[2][1]["blocked"] = True
+    grid_data[1][0]["blocked"] = True
+    grid_data[1][2]["blocked"] = True
+
+    # Block its symmetric counterparts so it doesn't fail symmetry, just to test orphans independently
+    grid_data[4][3]["blocked"] = True
+    grid_data[2][3]["blocked"] = True
+    grid_data[3][4]["blocked"] = True
+    grid_data[3][2]["blocked"] = True
+
+    issues = validate_grid(grid_data, 5, 5)
+    assert any("orphaned" in issue for issue in issues)
