@@ -2,6 +2,8 @@
 
 Windows OCR cleanup workflow for converting flat scanned PDFs into searchable, cleaner PDF files.
 
+See [Windows Setup Guide](docs/setup-windows.md) for environment configuration instructions.
+
 ## Example
 
 ``powershell
