@@ -145,6 +145,7 @@ def process_grid(img_gray, grid_rect):
                 is_blocked = avg_val < 128 # mostly dark
 
             row_data.append({
+                "id": f"cell-r{r}-c{c}",
                 "row": r,
                 "col": c,
                 "blocked": bool(is_blocked),
@@ -181,6 +182,7 @@ def assign_clues(grid_data, rows, cols):
                 if length >= 2:
                     needs_across = True
                     across_clues[str(clue_num)] = {
+                        "id": f"clue-across-{clue_num}",
                         "placeholder": f"Across {clue_num}",
                         "length": length,
                         "cell": [r, c]
@@ -196,6 +198,7 @@ def assign_clues(grid_data, rows, cols):
                 if length >= 2:
                     needs_down = True
                     down_clues[str(clue_num)] = {
+                        "id": f"clue-down-{clue_num}",
                         "placeholder": f"Down {clue_num}",
                         "length": length,
                         "cell": [r, c]
@@ -209,20 +212,26 @@ def assign_clues(grid_data, rows, cols):
 
 from jinja2 import Environment, FileSystemLoader
 
-def validate_grid(grid_data, rows, cols):
+def validate_grid(grid_data, rows, cols, start_issue_idx=1):
     """
     Apply standard crossword validation rules.
-    Returns a list of issue strings.
+    Returns a list of issue dicts and the next available issue ID.
     """
     issues = []
+    issue_idx = start_issue_idx
+
+    def add_issue(msg):
+        nonlocal issue_idx
+        issues.append({"id": f"issue-{issue_idx}", "message": msg})
+        issue_idx += 1
 
     # Standard dimensions
     standard_sizes = [15, 21]
     if rows not in standard_sizes or cols not in standard_sizes:
-        issues.append(f"Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).")
+        add_issue(f"Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).")
 
     if rows != cols:
-        issues.append("Grid is not square.")
+        add_issue("Grid is not square.")
 
     # Rotational symmetry
     asymmetric_blocks = 0
@@ -232,7 +241,7 @@ def validate_grid(grid_data, rows, cols):
                 asymmetric_blocks += 1
 
     if asymmetric_blocks > 0:
-        issues.append(f"Grid lacks 180-degree rotational symmetry ({asymmetric_blocks} cells mismatch).")
+        add_issue(f"Grid lacks 180-degree rotational symmetry ({asymmetric_blocks} cells mismatch).")
 
     # Orphaned cells (open cell completely surrounded by boundaries/blocks)
     orphans = 0
@@ -250,9 +259,9 @@ def validate_grid(grid_data, rows, cols):
                     orphans += 1
 
     if orphans > 0:
-        issues.append(f"Found {orphans} orphaned open cell(s).")
+        add_issue(f"Found {orphans} orphaned open cell(s).")
 
-    return issues
+    return issues, issue_idx
 
 def render_template(template_path, context):
     """Render a template using Jinja2."""
@@ -274,10 +283,12 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
     shutil.copy(image_path, out_dir / img_name)
 
     issues = []
+    issue_idx = 1
 
     grid_res = find_grid(image_path)
     if not grid_res:
-        issues.append("Failed to detect outer crossword grid bounding box.")
+        issues.append({"id": f"issue-{issue_idx}", "message": "Failed to detect outer crossword grid bounding box."})
+        issue_idx += 1
         require_review = True
         grid_data = []
         rows, cols = 0, 0
@@ -286,7 +297,8 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
         best_rect, img_gray = grid_res
         process_res = process_grid(img_gray, best_rect)
         if not process_res or process_res[0] is None:
-            issues.append("Failed to segment grid cells.")
+            issues.append({"id": f"issue-{issue_idx}", "message": "Failed to segment grid cells."})
+            issue_idx += 1
             require_review = True
             grid_data = []
             rows, cols = 0, 0
@@ -296,14 +308,58 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
             across_clues, down_clues = assign_clues(grid_data, rows, cols)
 
             # Validation
-            validation_issues = validate_grid(grid_data, rows, cols)
+            validation_issues, issue_idx = validate_grid(grid_data, rows, cols, issue_idx)
             if validation_issues:
                 issues.extend(validation_issues)
                 require_review = True
 
             if not across_clues and not down_clues:
-                issues.append("No clues found in the grid.")
+                issues.append({"id": f"issue-{issue_idx}", "message": "No clues found in the grid."})
+                issue_idx += 1
                 require_review = True
+
+    # Build review targets
+    review_targets = []
+
+    # Add cells
+    for r in range(rows):
+        for c in range(cols):
+            cell = grid_data[r][c]
+            review_targets.append({
+                "id": cell["id"],
+                "type": "cell",
+                "label": f"Cell R{r} C{c}",
+                "current_value": "blocked" if cell["blocked"] else ("open" + (f" ({cell['number']})" if cell["number"] else "")),
+                "source_coordinates": [r, c]
+            })
+
+    # Add clues
+    for num, clue in across_clues.items():
+        review_targets.append({
+            "id": clue["id"],
+            "type": "across_clue",
+            "label": f"Across {num}",
+            "current_value": clue["placeholder"],
+            "source_coordinates": clue["cell"]
+        })
+
+    for num, clue in down_clues.items():
+        review_targets.append({
+            "id": clue["id"],
+            "type": "down_clue",
+            "label": f"Down {num}",
+            "current_value": clue["placeholder"],
+            "source_coordinates": clue["cell"]
+        })
+
+    # Add issues
+    for issue in issues:
+        review_targets.append({
+            "id": issue["id"],
+            "type": "issue",
+            "label": f"Issue: {issue['id']}",
+            "current_value": issue["message"]
+        })
 
     cw_data = {
         "metadata": {
@@ -319,7 +375,8 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
             "down": down_clues
         },
         "issues": issues,
-        "review_required": require_review
+        "review_required": require_review,
+        "review_targets": review_targets
     }
 
     # Emit JSON
@@ -346,7 +403,9 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
         "image_filename": img_name,
         "metadata": cw_data["metadata"],
         "grid": cw_data["grid"],
+        "clues": cw_data["clues"],
         "issues": cw_data["issues"],
+        "review_targets": cw_data["review_targets"],
         "json_str": json.dumps(cw_data, indent=2)
     }
     review_html = render_template(template_dir / "review.html", review_context)
