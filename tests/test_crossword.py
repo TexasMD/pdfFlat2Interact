@@ -125,3 +125,72 @@ def test_digitize_full_flow(temp_dir):
     with open(out_dir / "review.html") as f:
         html = f.read()
         assert "test_cw2.png" in html
+
+from docvert.crossword import validate_grid
+
+def test_validate_grid_symmetry():
+    # 5x5 grid, asymmetric
+    grid_data = [[{"blocked": False} for _ in range(5)] for _ in range(5)]
+    grid_data[0][0]["blocked"] = True
+    # If symmetric, grid_data[4][4] should be True. Leave it False.
+
+    issues, _ = validate_grid(grid_data, 5, 5)
+
+    # 5x5 is non-standard
+    assert any("non-standard" in issue["message"] for issue in issues)
+    # Lacks symmetry
+    assert any("rotational symmetry" in issue["message"] for issue in issues)
+
+def test_validate_grid_orphans():
+    # 5x5 grid
+    grid_data = [[{"blocked": False} for _ in range(5)] for _ in range(5)]
+    # Create an orphan at (1,1) by blocking (0,1), (2,1), (1,0), (1,2)
+    grid_data[0][1]["blocked"] = True
+    grid_data[2][1]["blocked"] = True
+    grid_data[1][0]["blocked"] = True
+    grid_data[1][2]["blocked"] = True
+
+    # Block its symmetric counterparts so it doesn't fail symmetry, just to test orphans independently
+    grid_data[4][3]["blocked"] = True
+    grid_data[2][3]["blocked"] = True
+    grid_data[3][4]["blocked"] = True
+    grid_data[3][2]["blocked"] = True
+
+    issues, _ = validate_grid(grid_data, 5, 5)
+    assert any("orphaned" in issue["message"] for issue in issues)
+
+def test_digitize_review_targets(temp_dir):
+    img_path = temp_dir / "test_cw_review.png"
+    generate_synthetic_crossword(img_path, 3, 3, [(1, 1)])
+
+    out_dir = temp_dir / "out_review"
+    digitize_crossword_image(str(img_path), str(out_dir), title="Test Review Targets")
+
+    with open(out_dir / "crossword.json") as f:
+        data = json.load(f)
+
+    targets = data.get("review_targets", [])
+    assert len(targets) > 0
+
+    # Verify cells are targeted
+    cell_targets = [t for t in targets if t["type"] == "cell"]
+    assert len(cell_targets) == 9 # 3x3
+    assert cell_targets[0]["id"] == "cell-r0-c0"
+
+    # Verify clues are targeted
+    across_targets = [t for t in targets if t["type"] == "across_clue"]
+    assert len(across_targets) == 2
+    assert across_targets[0]["id"].startswith("clue-across-")
+
+    # Verify issues are targeted (should have non-standard size issue)
+    issue_targets = [t for t in targets if t["type"] == "issue"]
+    assert len(issue_targets) > 0
+    assert issue_targets[0]["id"].startswith("issue-")
+
+    # Verify review.html contains expected DOM elements
+    with open(out_dir / "review.html") as f:
+        html = f.read()
+        assert 'id="review-panel"' in html
+        assert 'id="export-btn"' in html
+        assert 'id="import-file"' in html
+        assert 'data-id="cell-r0-c0"' in html

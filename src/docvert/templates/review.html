@@ -4,55 +4,277 @@
 <meta charset="UTF-8">
 <title>Review: {{ title }}</title>
 <style>
-  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-  .container { display: flex; gap: 20px; align-items: flex-start; }
-  .info { border: 1px solid #ccc; padding: 20px; border-radius: 5px; }
-  .grid { display: grid; border: 2px solid black; }
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; max-width: 1200px; margin: 0 auto; background: #f9f9f9;}
+  .container { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; margin-top: 20px; width: 100%;}
+  .column { display: flex; flex-direction: column; gap: 20px; flex: 1; min-width: 300px; }
+  .card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+
+  .grid { display: grid; border: 2px solid black; width: fit-content;}
   .cell {
-    width: 20px; height: 20px; border: 1px solid #ccc; position: relative;
-    display: flex; justify-content: center; align-items: center; font-size: 8px;
+    width: 25px; height: 25px; border: 1px solid #ccc; position: relative;
+    display: flex; justify-content: center; align-items: center; font-size: 10px; cursor: pointer;
   }
   .cell.blocked { background-color: black; }
   .cell.open { background-color: white; }
   .number { position: absolute; top: 1px; left: 1px; }
-  .issues { color: red; font-weight: bold; }
+
+  .reviewable { cursor: pointer; border-radius: 3px; padding: 2px; }
+  .reviewable:hover { outline: 2px solid #007bff; }
+
+  .status-accept { background-color: #d4edda; border-color: #c3e6cb; }
+  .status-needs_correction { background-color: #f8d7da; border-color: #f5c6cb; }
+  .status-not_applicable { background-color: #e2e3e5; border-color: #d6d8db; }
+  .status-block_release { background-color: #ff9800; border-color: #ff9800; color: white; }
+
+  .issues-list { list-style: none; padding: 0; }
+  .issues-list li { margin-bottom: 5px; padding: 5px; border: 1px solid #ccc; }
+  .clue-list { max-height: 200px; overflow-y: auto; padding: 0; list-style: none; border: 1px solid #eee; }
+  .clue-list li { padding: 4px; border-bottom: 1px solid #eee; }
+
+  /* Review Panel */
+  .review-panel { position: sticky; top: 20px; background: #fff; padding: 20px; border: 2px solid #007bff; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+  .form-group { margin-bottom: 15px; }
+  .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+  .form-group input[type="text"], .form-group textarea, .form-group select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  .btn { padding: 8px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; margin-right: 5px;}
+  .btn:hover { background: #0056b3; }
+  .btn-secondary { background: #6c757d; }
+  .btn-secondary:hover { background: #5a6268; }
+
+  .controls { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; justify-content: center; padding: 10px; background: white; border-radius: 5px; border: 1px solid #ddd;}
 </style>
 </head>
 <body>
 <h1>Review Required: {{ review_required }}</h1>
 
-<div class="container">
+<div class="controls">
+  <button class="btn" id="export-btn">Export review_actions.json</button>
   <div>
-    <h3>Source Image</h3>
-    <img src="{{ image_filename }}" alt="Source Image" style="max-width: 400px; border: 1px solid #000;">
+    <input type="file" id="import-file" style="display: none;" accept=".json">
+    <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">Import review_actions.json</button>
   </div>
+  <button class="btn btn-secondary" id="clear-btn">Clear Browser Data</button>
+</div>
 
-  <div class="info">
-    <h3>Detected Grid</h3>
-    <p>Rows: {{ metadata.rows }} | Columns: {{ metadata.columns }}</p>
-    <div class="grid" style="grid-template-columns: repeat({{ metadata.columns }}, 20px); grid-template-rows: repeat({{ metadata.rows }}, 20px);">
-      {% for row in grid %}
-        {% for cell in row %}
-          <div class="cell {{ 'blocked' if cell.blocked else 'open' }}">
-            {% if cell.number %}<span class="number">{{ cell.number }}</span>{% endif %}
-          </div>
-        {% endfor %}
-      {% endfor %}
+<div class="container">
+  <!-- Left Column: Source & Data -->
+  <div class="column">
+    <div class="card">
+      <h3>Source Image</h3>
+      <img src="{{ image_filename }}" alt="Source Image" style="max-width: 100%; border: 1px solid #000;">
     </div>
 
-    <h3>Issues</h3>
-    <ul class="issues">
-      {% for issue in issues %}
-        <li>{{ issue }}</li>
-      {% else %}
-        <li style="color: green;">No validation issues detected.</li>
-      {% endfor %}
-    </ul>
+    <div class="card">
+      <h3>Clues</h3>
+      <h4>Across</h4>
+      <ul class="clue-list">
+        {% for num, clue in clues.across.items() %}
+          <li class="reviewable" data-id="{{ clue.id }}">{{ num }}. {{ clue.placeholder }} ({{ clue.length }})</li>
+        {% endfor %}
+      </ul>
+      <h4>Down</h4>
+      <ul class="clue-list">
+        {% for num, clue in clues.down.items() %}
+          <li class="reviewable" data-id="{{ clue.id }}">{{ num }}. {{ clue.placeholder }} ({{ clue.length }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
 
-    <h3>Extracted Data</h3>
-    <pre>{{ json_str }}</pre>
+  <!-- Middle Column: Grid & Issues -->
+  <div class="column">
+    <div class="card">
+      <h3>Detected Grid ({{ metadata.rows }}x{{ metadata.columns }})</h3>
+      <div class="grid" style="grid-template-columns: repeat({{ metadata.columns }}, 25px); grid-template-rows: repeat({{ metadata.rows }}, 25px);">
+        {% for row in grid %}
+          {% for cell in row %}
+            <div class="cell reviewable {{ 'blocked' if cell.blocked else 'open' }}" data-id="{{ cell.id }}">
+              {% if cell.number %}<span class="number">{{ cell.number }}</span>{% endif %}
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Validation Issues</h3>
+      <ul class="issues-list">
+        {% for issue in issues %}
+          <li class="reviewable" data-id="{{ issue.id }}"><strong>{{ issue.id }}:</strong> {{ issue.message }}</li>
+        {% else %}
+          <li style="color: green; border: none;">No validation issues detected.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Right Column: Review Panel -->
+  <div class="column">
+    <div class="review-panel" id="review-panel" style="display: none;">
+      <h3>Review Target</h3>
+      <div id="target-info" style="margin-bottom: 15px; font-size: 14px; color: #555;"></div>
+
+      <div class="form-group">
+        <label>Decision</label>
+        <select id="decision">
+          <option value="">-- Select Decision --</option>
+          <option value="accept">Accept</option>
+          <option value="needs_correction">Needs Correction</option>
+          <option value="not_applicable">Not Applicable</option>
+          <option value="block_release">Block Release</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Corrected Value (Optional)</label>
+        <input type="text" id="corrected-value" placeholder="Enter correction if needed">
+      </div>
+
+      <div class="form-group">
+        <label>Severity (1-5)</label>
+        <select id="severity">
+          <option value="">-- Optional --</option>
+          <option value="1">1 - Minor</option>
+          <option value="2">2 - Low</option>
+          <option value="3">3 - Medium</option>
+          <option value="4">4 - High</option>
+          <option value="5">5 - Critical</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Notes</label>
+        <textarea id="notes" rows="4" placeholder="Reviewer notes..."></textarea>
+      </div>
+
+      <button class="btn" id="save-decision-btn">Save Decision</button>
+    </div>
+
+    <div class="card" id="select-prompt">
+      <p><em>Select a grid cell, clue, or issue to begin review.</em></p>
+    </div>
   </div>
 </div>
 
+<script>
+  const reviewTargets = {{ review_targets | tojson }};
+  const decisions = JSON.parse(localStorage.getItem('cw_review_decisions')) || {};
+  let currentTargetId = null;
+
+  function applyStatusClasses() {
+    document.querySelectorAll('.reviewable').forEach(el => {
+      const id = el.dataset.id;
+      // remove old classes
+      el.classList.remove('status-accept', 'status-needs_correction', 'status-not_applicable', 'status-block_release');
+      if (decisions[id] && decisions[id].decision) {
+        el.classList.add(`status-${decisions[id].decision}`);
+      }
+    });
+  }
+
+  function openReviewPanel(targetId) {
+    currentTargetId = targetId;
+    const target = reviewTargets.find(t => t.id === targetId);
+    if (!target) return;
+
+    document.getElementById('select-prompt').style.display = 'none';
+    const panel = document.getElementById('review-panel');
+    panel.style.display = 'block';
+
+    document.getElementById('target-info').innerHTML = `
+      <strong>ID:</strong> ${target.id}<br>
+      <strong>Type:</strong> ${target.type}<br>
+      <strong>Label:</strong> ${target.label}<br>
+      <strong>Current Value:</strong> ${target.current_value}
+    `;
+
+    // Load existing decision if any
+    const existing = decisions[targetId] || {};
+    document.getElementById('decision').value = existing.decision || '';
+    document.getElementById('corrected-value').value = existing.corrected_value || '';
+    document.getElementById('severity').value = existing.severity || '';
+    document.getElementById('notes').value = existing.notes || '';
+  }
+
+  document.getElementById('save-decision-btn').addEventListener('click', () => {
+    if (!currentTargetId) return;
+
+    decisions[currentTargetId] = {
+      decision: document.getElementById('decision').value,
+      corrected_value: document.getElementById('corrected-value').value,
+      severity: document.getElementById('severity').value,
+      notes: document.getElementById('notes').value,
+      timestamp: new Date().toISOString()
+    };
+
+    localStorage.setItem('cw_review_decisions', JSON.stringify(decisions));
+    applyStatusClasses();
+
+    // Highlight visual success briefly
+    const btn = document.getElementById('save-decision-btn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Saved!';
+    btn.style.backgroundColor = '#28a745';
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.backgroundColor = '#007bff';
+    }, 1000);
+  });
+
+  // Attach listeners
+  document.querySelectorAll('.reviewable').forEach(el => {
+    el.addEventListener('click', (e) => {
+      // For cells, don't trigger if they clicked exactly on the inner number span, route it up
+      const targetEl = e.target.closest('.reviewable');
+      openReviewPanel(targetEl.dataset.id);
+
+      // highlight selected outline
+      document.querySelectorAll('.reviewable').forEach(r => r.style.outline = 'none');
+      targetEl.style.outline = '2px solid #007bff';
+    });
+  });
+
+  // Export
+  document.getElementById('export-btn').addEventListener('click', () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(decisions, null, 2));
+    const a = document.createElement('a');
+    a.href = dataStr;
+    a.download = "review_actions.json";
+    a.click();
+  });
+
+  // Import
+  document.getElementById('import-file').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        Object.assign(decisions, imported);
+        localStorage.setItem('cw_review_decisions', JSON.stringify(decisions));
+        applyStatusClasses();
+        alert('Review actions imported successfully!');
+      } catch (err) {
+        alert('Error parsing JSON file.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // Clear
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    if(confirm('Are you sure you want to clear all review decisions from the browser?')) {
+      localStorage.removeItem('cw_review_decisions');
+      for (const key in decisions) delete decisions[key];
+      applyStatusClasses();
+      document.getElementById('review-panel').style.display = 'none';
+      document.getElementById('select-prompt').style.display = 'block';
+    }
+  });
+
+  // Init
+  applyStatusClasses();
+</script>
 </body>
 </html>

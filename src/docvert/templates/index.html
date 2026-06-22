@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <title>{{ title }}</title>
 <style>
-  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
-  .container { display: flex; gap: 20px; }
-  .grid { display: grid; border: 2px solid black; }
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; max-width: 800px; margin: 0 auto; }
+  .container { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;}
+  .grid { display: grid; border: 2px solid black; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
   .cell {
     width: 30px; height: 30px; border: 1px solid #ccc; position: relative;
     display: flex; justify-content: center; align-items: center; font-size: 18px; font-weight: bold;
@@ -19,7 +19,8 @@
   .number { position: absolute; top: 2px; left: 2px; font-size: 10px; font-weight: normal; }
   .clues-container { display: flex; gap: 20px; }
   .clue-list { max-height: 500px; overflow-y: auto; }
-  .clue-item { cursor: pointer; padding: 2px 5px; }
+  .clue-item { cursor: pointer; padding: 4px 5px; border-bottom: 1px solid #eee;}
+  .clue-item:hover { background-color: #f1f8ff; }
   .clue-item.selected { background-color: #bbdefb; font-weight: bold; }
 </style>
 </head>
@@ -81,6 +82,7 @@
           updateSelection();
         });
       }
+
       gridContainer.appendChild(el);
       rowCells.push({ el, data: cellData, inputSpan: el.querySelector('span') });
     });
@@ -95,7 +97,19 @@
       el.className = 'clue-item';
       el.dataset.num = num;
       el.dataset.type = type;
-      el.textContent = `${num}. ${clue.placeholder} (${clue.length})`;
+
+      const numSpan = document.createElement('span');
+      numSpan.textContent = `${num}. `;
+      el.appendChild(numSpan);
+
+      const textSpan = document.createElement('span');
+      textSpan.textContent = clue.placeholder;
+      el.appendChild(textSpan);
+
+      const lenSpan = document.createElement('span');
+      lenSpan.textContent = ` (${clue.length})`;
+      el.appendChild(lenSpan);
+
       el.addEventListener('click', () => {
         direction = type;
         selectedCell = { r: clue.cell[0], c: clue.cell[1] };
