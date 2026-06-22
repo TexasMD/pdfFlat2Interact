@@ -1,0 +1,658 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docvert.local/schemas/05_CORRECTION_MEMORY_SCHEMA_V4.json",
+  "title": "DOCVERT Correction Memory Schema V4",
+  "description": "Schema for docvert correction memory files. Correction memory stores conservative reusable rules, human-confirmed corrections, negative examples, and review decisions used by the validation-first workbook-PDF conversion pipeline.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_name",
+    "schema_version",
+    "project",
+    "memory_version",
+    "created_utc",
+    "updated_utc",
+    "correction_records"
+  ],
+  "properties": {
+    "schema_name": {
+      "const": "DOCVERT_CORRECTION_MEMORY_SCHEMA"
+    },
+    "schema_version": {
+      "const": 4
+    },
+    "project": {
+      "const": "docvert"
+    },
+    "memory_version": {
+      "type": "string",
+      "description": "Version of the correction-memory instance using this schema. Example: 4.0.0-pilot.1."
+    },
+    "created_utc": {
+      "$ref": "#/$defs/utc_timestamp"
+    },
+    "updated_utc": {
+      "$ref": "#/$defs/utc_timestamp"
+    },
+    "description": {
+      "type": "string"
+    },
+    "source_basis": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Project sources or prior memory files used to seed this memory instance."
+    },
+    "correction_records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/correction_record"
+      },
+      "uniqueItems": true
+    },
+    "negative_examples": {
+      "type": "array",
+      "description": "False positives and do-not-apply cases. These should be checked before broad reusable rules.",
+      "items": {
+        "$ref": "#/$defs/correction_record"
+      },
+      "default": []
+    },
+    "review_log": {
+      "type": "array",
+      "description": "Optional durable log of reviewer decisions that created, revised, rejected, or deprecated correction records.",
+      "items": {
+        "$ref": "#/$defs/review_decision_record"
+      },
+      "default": []
+    },
+    "metadata": {
+      "$ref": "#/$defs/metadata"
+    }
+  },
+  "$defs": {
+    "utc_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC timestamp in ISO-8601 format."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence_label": {
+      "type": "string",
+      "enum": [
+        "unknown",
+        "low",
+        "medium",
+        "high",
+        "human_confirmed"
+      ]
+    },
+    "bbox": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "x0",
+        "y0",
+        "x1",
+        "y1"
+      ],
+      "properties": {
+        "x0": { "type": "number" },
+        "y0": { "type": "number" },
+        "x1": { "type": "number" },
+        "y1": { "type": "number" },
+        "coordinate_space": {
+          "type": "string",
+          "enum": ["rendered_page_px", "pdf_points", "normalized_0_1"],
+          "default": "rendered_page_px"
+        }
+      }
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "global",
+        "document",
+        "pdf",
+        "page",
+        "region",
+        "question",
+        "block"
+      ],
+      "description": "Smallest safe scope where the correction may be considered. Prefer the narrowest applicable scope."
+    },
+    "correction_type": {
+      "type": "string",
+      "enum": [
+        "ocr_text_correction",
+        "embedded_text_correction",
+        "symbol_substitution",
+        "number_correction",
+        "currency_correction",
+        "fraction_layout_correction",
+        "math_operator_correction",
+        "layout_segmentation_rule",
+        "page_header_footer_artifact",
+        "factoid_sidebar_rule",
+        "question_grouping_rule",
+        "answer_line_detection_rule",
+        "visual_reference_trigger",
+        "table_column_reading_correction",
+        "block_coherence_rule",
+        "semantic_sanity_rule",
+        "human_review_decision",
+        "source_specific_exception",
+        "negative_rule"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "active",
+        "deprecated",
+        "superseded",
+        "rejected"
+      ]
+    },
+    "allowed_action": {
+      "type": "string",
+      "enum": [
+        "flag_only",
+        "suggest_only",
+        "auto_correct",
+        "split_blocks",
+        "merge_blocks",
+        "classify_block_role",
+        "exclude_from_student_output",
+        "attach_answer_bank",
+        "attach_visual_reference",
+        "preserve_visual_reference",
+        "create_answer_inputs",
+        "require_human_review",
+        "block_release",
+        "no_action_negative_example"
+      ]
+    },
+    "source_pattern": {
+      "type": "object",
+      "description": "What the pipeline saw before correction. At least one concrete pattern, signal, or example is required.",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "bad_text": { "type": "string" },
+        "bad_pattern": { "type": "string", "description": "Regex or symbolic pattern describing the bad extraction." },
+        "trigger_pattern": { "type": "string" },
+        "trigger_words": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "source_method": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["ocr", "embedded_pdf_text", "layout_detection", "block_role_classifier", "semantic_validator", "human_review", "rendered_image"]
+          }
+        },
+        "visual_signals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "different_background_color",
+              "different_font_weight",
+              "different_font_size",
+              "boxed_or_shaded_area",
+              "corner_sidebar_position",
+              "large_horizontal_gap",
+              "large_vertical_gap",
+              "table_grid",
+              "column_layout",
+              "number_line",
+              "map",
+              "graph",
+              "chart",
+              "diagram",
+              "crossword_grid",
+              "word_search_grid",
+              "drawing_area",
+              "answer_line",
+              "footer_region",
+              "page_header_region"
+            ]
+          }
+        },
+        "issue_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "example_bad": { "type": ["string", "number", "object", "array", "null"] }
+      }
+    },
+    "corrected_structure": {
+      "type": "object",
+      "description": "Structured correction or intended pipeline action. Use this when a correction is not a simple text replacement.",
+      "additionalProperties": true,
+      "properties": {
+        "corrected_text": { "type": ["string", "null"] },
+        "block_role": { "type": ["string", "null"] },
+        "exercise_type": { "type": ["string", "null"] },
+        "split_into_blocks": {
+          "type": "array",
+          "items": { "type": "object", "additionalProperties": true }
+        },
+        "attach_to_exercise_id": { "type": ["string", "null"] },
+        "attach_visual_reference": { "type": ["boolean", "null"] },
+        "visual_reference_requirement": {
+          "type": ["string", "null"],
+          "enum": ["required", "helpful", "not_required", null]
+        },
+        "student_output_action": {
+          "type": ["string", "null"],
+          "enum": ["include", "exclude", "optional_note", "review_only", "block_release", null]
+        },
+        "input_control_action": {
+          "type": ["string", "null"],
+          "enum": ["short_answer", "textarea", "dropdown", "checkbox", "radio", "matching", "drawing_area", "grid_input", "none", null]
+        }
+      }
+    },
+    "applies_when": {
+      "type": "object",
+      "description": "All positive and negative conditions that restrict reuse. Conditions should be specific enough to prevent unsafe global replacement.",
+      "additionalProperties": false,
+      "properties": {
+        "context_tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "source_pdf": {
+          "type": ["string", "null"]
+        },
+        "source_id": {
+          "type": ["string", "null"]
+        },
+        "page_numbers": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "region": {
+          "$ref": "#/$defs/bbox"
+        },
+        "block_roles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "nearby_block_roles": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "exercise_types": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validator_stages": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "source_intake",
+              "page_rendering",
+              "embedded_text_extraction",
+              "ocr_extraction",
+              "ocr_pdf_comparison",
+              "layout_detection",
+              "block_role_classification",
+              "block_coherence",
+              "symbol_normalization",
+              "question_extraction",
+              "answer_line_detection",
+              "visual_dependency_detection",
+              "semantic_validation",
+              "issue_reporting",
+              "human_review",
+              "final_qa"
+            ]
+          }
+        },
+        "requires_rendered_image_match": {
+          "type": "boolean",
+          "default": true
+        },
+        "requires_ocr_pdf_disagreement": {
+          "type": "boolean"
+        },
+        "requires_multiple_signals": {
+          "type": "boolean",
+          "default": true
+        },
+        "minimum_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "maximum_confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "negative_conditions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Cases where this correction must not be reused."
+        },
+        "human_review_status_required": {
+          "type": ["string", "null"],
+          "enum": ["unreviewed", "accepted", "edited", "rejected", "needs_more_context", "deferred", "blocked", null]
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source_pdf": { "type": ["string", "null"] },
+        "source_page": { "type": ["integer", "null"], "minimum": 1 },
+        "page_image_path": { "type": ["string", "null"] },
+        "source_region": { "$ref": "#/$defs/bbox" },
+        "block_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "exercise_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "question_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "issue_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "pdf_text": { "type": ["string", "null"] },
+        "ocr_text": { "type": ["string", "null"] },
+        "visible_text_summary": { "type": ["string", "null"] },
+        "rendered_image_support": {
+          "type": "string",
+          "enum": ["supports_correction", "contradicts_correction", "not_checked", "not_applicable"],
+          "default": "not_checked"
+        },
+        "examples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "bad": { "type": ["string", "number", "object", "array", "null"] },
+              "good": { "type": ["string", "number", "object", "array", "null"] },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "reuse_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "can_apply_automatically",
+        "requires_human_confirmation",
+        "requires_visual_confirmation",
+        "allowed_actions"
+      ],
+      "properties": {
+        "can_apply_automatically": { "type": "boolean" },
+        "requires_human_confirmation": { "type": "boolean" },
+        "requires_visual_confirmation": { "type": "boolean" },
+        "allowed_actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/allowed_action" },
+          "minItems": 1
+        },
+        "logs_issue_type": { "type": ["string", "null"] },
+        "issue_severity_if_uncertain": {
+          "type": ["string", "null"],
+          "enum": ["critical", "major", "minor", "advisory", null]
+        },
+        "blocks_student_html_if_uncertain": {
+          "type": "boolean",
+          "default": true
+        },
+        "preserve_alternate_hypotheses": {
+          "type": "boolean",
+          "default": true
+        },
+        "log_application_event": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "correction_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correction_id",
+        "correction_type",
+        "status",
+        "source_pattern",
+        "scope",
+        "applies_when",
+        "confidence",
+        "confidence_label",
+        "source_pdf",
+        "source_page",
+        "human_reviewer_note",
+        "created_utc",
+        "updated_utc",
+        "record_version",
+        "reuse_policy"
+      ],
+      "anyOf": [
+        { "required": ["corrected_value"] },
+        { "required": ["corrected_structure"] }
+      ],
+      "properties": {
+        "correction_id": {
+          "type": "string",
+          "pattern": "^cm_v4_[a-z0-9][a-z0-9_\\-]*$",
+          "description": "Stable correction identifier. Do not reuse after deletion or semantic change."
+        },
+        "correction_type": { "$ref": "#/$defs/correction_type" },
+        "status": { "$ref": "#/$defs/status" },
+        "source_pattern": { "$ref": "#/$defs/source_pattern" },
+        "corrected_value": {
+          "type": ["string", "number", "boolean", "object", "array", "null"],
+          "description": "Corrected value for simple text/symbol/number replacement."
+        },
+        "corrected_structure": { "$ref": "#/$defs/corrected_structure" },
+        "scope": { "$ref": "#/$defs/scope" },
+        "applies_when": { "$ref": "#/$defs/applies_when" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "confidence_label": { "$ref": "#/$defs/confidence_label" },
+        "confidence_basis": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "source_pdf": {
+          "type": ["string", "null"],
+          "description": "PDF filename where this correction was first observed or confirmed. Null only for imported global rules without source page."
+        },
+        "source_page": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Page where this correction was first observed or confirmed. Null only for imported global rules without a specific page."
+        },
+        "source_region": { "$ref": "#/$defs/bbox" },
+        "block_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "exercise_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "question_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "linked_issue_types": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "linked_issue_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "human_reviewer_note": {
+          "type": ["string", "null"],
+          "description": "Reviewer rationale or note. Required but may be null for imported seed rules that have not yet been reviewed in V4."
+        },
+        "reviewer_action_id": {
+          "type": ["string", "null"]
+        },
+        "created_by": {
+          "type": "string",
+          "enum": ["human_reviewer", "validator", "imported_v3_seed", "implementation", "test_fixture"]
+        },
+        "created_utc": { "$ref": "#/$defs/utc_timestamp" },
+        "updated_utc": { "$ref": "#/$defs/utc_timestamp" },
+        "record_version": {
+          "type": "string",
+          "description": "Version of this correction record. Increment when conditions, scope, or action changes."
+        },
+        "supersedes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "superseded_by": {
+          "type": ["string", "null"],
+          "default": null
+        },
+        "reuse_policy": { "$ref": "#/$defs/reuse_policy" },
+        "metadata": { "$ref": "#/$defs/metadata" }
+      }
+    },
+    "review_decision_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "review_action_id",
+        "action",
+        "target_correction_id",
+        "reviewed_utc"
+      ],
+      "properties": {
+        "review_action_id": { "type": "string" },
+        "action": {
+          "type": "string",
+          "enum": ["accepted", "edited", "rejected", "deprecated", "narrowed_scope", "broadened_scope", "converted_to_negative_example"]
+        },
+        "target_correction_id": { "type": "string" },
+        "before": { "type": ["string", "number", "object", "array", "null"] },
+        "after": { "type": ["string", "number", "object", "array", "null"] },
+        "reviewer_note": { "type": ["string", "null"] },
+        "reviewed_utc": { "$ref": "#/$defs/utc_timestamp" },
+        "related_issue_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Implementation-specific metadata that should not change correction meaning."
+    }
+  },
+  "examples": [
+    {
+      "schema_name": "DOCVERT_CORRECTION_MEMORY_SCHEMA",
+      "schema_version": 4,
+      "project": "docvert",
+      "memory_version": "4.0.0-pilot.1",
+      "created_utc": "2026-06-13T00:00:00Z",
+      "updated_utc": "2026-06-13T00:00:00Z",
+      "description": "Example V4 correction memory instance.",
+      "source_basis": [
+        "DOCVERT_HANDOFF_BASELINE.md",
+        "01_PIPELINE_SPEC_V4.md",
+        "correction_memory_v3.json"
+      ],
+      "correction_records": [
+        {
+          "correction_id": "cm_v4_money_cents_trailing_zero",
+          "correction_type": "currency_correction",
+          "status": "active",
+          "source_pattern": {
+            "bad_pattern": "\\b(\\d{1,2})0\\b",
+            "trigger_words": ["coin", "coins", "worth", "value", "quarter", "penny", "nickel", "dime"],
+            "source_method": ["embedded_pdf_text", "ocr", "semantic_validator"],
+            "issue_types": ["possible_cents_symbol_misread"],
+            "example_bad": "110"
+          },
+          "corrected_value": "11¢",
+          "scope": "global",
+          "applies_when": {
+            "context_tags": ["money_coin_problem"],
+            "validator_stages": ["ocr_pdf_comparison", "symbol_normalization", "semantic_validation"],
+            "requires_rendered_image_match": true,
+            "requires_multiple_signals": true,
+            "negative_conditions": ["The rendered page visibly shows a numeric zero rather than a cents symbol."]
+          },
+          "confidence": 0.7,
+          "confidence_label": "medium",
+          "confidence_basis": ["V3 seed rule; common PDF text-layer corruption in coin problems."],
+          "source_pdf": "sumbridge2.pdf",
+          "source_page": 2,
+          "block_ids": [],
+          "exercise_ids": [],
+          "question_ids": [],
+          "linked_issue_types": ["possible_cents_symbol_misread", "semantic_plausibility_failure"],
+          "linked_issue_ids": [],
+          "evidence": {
+            "source_pdf": "sumbridge2.pdf",
+            "source_page": 2,
+            "rendered_image_support": "supports_correction",
+            "examples": [
+              {"bad": "110", "good": "11¢", "note": "Coin context; visual confirmation still required before auto-correction."}
+            ]
+          },
+          "human_reviewer_note": "Imported V3 seed; use to flag or suggest correction unless rendered image confirms.",
+          "reviewer_action_id": null,
+          "created_by": "imported_v3_seed",
+          "created_utc": "2026-06-13T00:00:00Z",
+          "updated_utc": "2026-06-13T00:00:00Z",
+          "record_version": "1.0.0",
+          "supersedes": [],
+          "superseded_by": null,
+          "reuse_policy": {
+            "can_apply_automatically": false,
+            "requires_human_confirmation": true,
+            "requires_visual_confirmation": true,
+            "allowed_actions": ["flag_only", "suggest_only", "require_human_review"],
+            "logs_issue_type": "possible_cents_symbol_misread",
+            "issue_severity_if_uncertain": "major",
+            "blocks_student_html_if_uncertain": true,
+            "preserve_alternate_hypotheses": true,
+            "log_application_event": true
+          }
+        }
+      ],
+      "negative_examples": [],
+      "review_log": []
+    }
+  ]
+}

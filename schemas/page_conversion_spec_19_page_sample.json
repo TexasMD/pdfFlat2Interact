@@ -1,0 +1,52 @@
+{
+  "source": "19-page trial PDF conversion spec created during project",
+  "notes": "This is a compact machine-readable version of the page-by-page spec. See docs/05_PAGE_CONVERSION_RULES.md for full rules.",
+  "high_priority_visual_pages": [
+    {
+      "page": 5,
+      "section": "Number Line",
+      "handling": "recreate as SVG or crop; required"
+    },
+    {
+      "page": 13,
+      "section": "Geometry Gems",
+      "handling": "show line segments; drawing/line input required"
+    },
+    {
+      "page": 16,
+      "section": "Regions of Our Country",
+      "handling": "include map; required"
+    },
+    {
+      "page": 18,
+      "section": "Time Zones",
+      "handling": "include map; helpful/likely required"
+    }
+  ],
+  "structured_non_visual_pages": [
+    {
+      "page": 9,
+      "section": "Number Families",
+      "handling": "fact-family blocks"
+    },
+    {
+      "page": 10,
+      "section": "Abbreviations",
+      "handling": "matching/dropdown table"
+    },
+    {
+      "page": 12,
+      "section": "Word Referents",
+      "handling": "inline blanks in passage"
+    },
+    {
+      "page": 19,
+      "section": "Main and Helping Verbs",
+      "handling": "two answer boxes per sentence"
+    }
+  ],
+  "special_layout_example": {
+    "section": "Suffix wheel",
+    "handling": "normalize into suffix headings and base-word list unless wheel layout is pedagogically required"
+  }
+}
