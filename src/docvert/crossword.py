@@ -228,7 +228,7 @@ def validate_grid(grid_data, rows, cols, start_issue_idx=1):
     # Standard dimensions
     standard_sizes = [15, 21]
     if rows not in standard_sizes or cols not in standard_sizes:
-        add_issue(f"Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).")
+        add_issue(f"Advisory: Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).")
 
     if rows != cols:
         add_issue("Grid is not square.")
@@ -283,6 +283,7 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
     shutil.copy(image_path, out_dir / img_name)
 
     issues = []
+
     issue_idx = 1
 
     grid_res = find_grid(image_path)
@@ -405,7 +406,7 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
         "grid": cw_data["grid"],
         "clues": cw_data["clues"],
         "issues": cw_data["issues"],
-        "review_targets": cw_data["review_targets"],
+        "review_targets": cw_data.get("review_targets", []),
         "json_str": json.dumps(cw_data, indent=2)
     }
     review_html = render_template(template_dir / "review.html", review_context)

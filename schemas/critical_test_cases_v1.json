@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "created_utc": "2026-06-13T00:40:18+00:00",
+  "critical_test_cases": [
+    {
+      "id": "layout_factoid_separation_sumbridge2_p1",
+      "source": "sumbridge2.pdf page 1",
+      "purpose": "Verify layout-aware contextual coherence validation.",
+      "bad_behavior": "Merges upper-right FACTOID text into upper-left abbreviation instruction.",
+      "expected_structure": {
+        "main_instruction": "Draw lines between these words and their abbreviations.",
+        "factoid_sidebar": "Earthquakes can cause rivers to temporarily flow backwards.",
+        "exercise_type": "matching_abbreviations"
+      },
+      "required_issues_if_uncertain": [
+        "contextual_coherence_failure",
+        "possible_layout_block_merge_error",
+        "sidebar_factoid_detected"
+      ]
+    },
+    {
+      "id": "money_cents_symbol_sumbridge2_p2",
+      "source": "sumbridge2.pdf page 2",
+      "purpose": "Verify visible-text/OCR symbol validation and semantic plausibility checking.",
+      "bad_behavior": "Reads cents values as trailing-zero integers, e.g. 11\u00a2 as 110.",
+      "expected_behavior": "Detect and flag/correct cents symbols based on OCR/visual review and coin-problem semantic validation.",
+      "example": {
+        "bad": "Cammie has 3 coins worth 110.",
+        "correct": "Cammie has 3 coins worth 11\u00a2."
+      },
+      "required_issues_if_uncertain": [
+        "possible_cents_symbol_misread",
+        "semantic_plausibility_failure"
+      ]
+    },
+    {
+      "id": "number_line_visual_reference",
+      "source": "19-page trial PDF page 5",
+      "purpose": "Verify visual-reference validation.",
+      "bad_behavior": "Provides answer boxes but omits number line.",
+      "expected_behavior": "Include recreated SVG or clipped number line reference."
+    }
+  ]
+}

@@ -7,9 +7,6 @@
   body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; max-width: 800px; margin: 0 auto; }
   .container { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;}
   .grid { display: grid; border: 2px solid black; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-  .actions { margin-top: 20px; }
-  button { padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-  button:hover { background: #0056b3; }
   .cell {
     width: 30px; height: 30px; border: 1px solid #ccc; position: relative;
     display: flex; justify-content: center; align-items: center; font-size: 18px; font-weight: bold;
@@ -25,15 +22,10 @@
   .clue-item { cursor: pointer; padding: 4px 5px; border-bottom: 1px solid #eee;}
   .clue-item:hover { background-color: #f1f8ff; }
   .clue-item.selected { background-color: #bbdefb; font-weight: bold; }
-  .clue-text { outline: none; }
-  .clue-text:focus { border-bottom: 1px dashed #007bff; }
 </style>
 </head>
 <body>
 <h1>{{ title }}</h1>
-<div class="actions">
-  <button id="export-btn">Export JSON</button>
-</div>
 <div class="container">
   <div class="grid" id="grid-container"></div>
   <div class="clues-container">
@@ -81,8 +73,7 @@
         const inputSpan = document.createElement('span');
         el.appendChild(inputSpan);
 
-        el.addEventListener('click', (e) => {
-          if (e.button !== 0) return; // Only left click for selection
+        el.addEventListener('click', () => {
           if (selectedCell && selectedCell.r === cellData.row && selectedCell.c === cellData.col) {
             direction = direction === 'across' ? 'down' : 'across';
           } else {
@@ -91,17 +82,6 @@
           updateSelection();
         });
       }
-
-      // Right click to toggle block
-      el.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        cellData.blocked = !cellData.blocked;
-        el.className = `cell ${cellData.blocked ? 'blocked' : 'open'}`;
-        if (cellData.blocked) {
-           if (el.querySelector('span')) el.querySelector('span').textContent = '';
-           el.classList.remove('selected', 'highlight');
-        }
-      });
 
       gridContainer.appendChild(el);
       rowCells.push({ el, data: cellData, inputSpan: el.querySelector('span') });
@@ -123,20 +103,14 @@
       el.appendChild(numSpan);
 
       const textSpan = document.createElement('span');
-      textSpan.className = 'clue-text';
       textSpan.textContent = clue.placeholder;
-      textSpan.contentEditable = true;
-      textSpan.addEventListener('input', (e) => {
-         data.clues[type][num].placeholder = e.target.textContent;
-      });
       el.appendChild(textSpan);
 
       const lenSpan = document.createElement('span');
       lenSpan.textContent = ` (${clue.length})`;
       el.appendChild(lenSpan);
 
-      el.addEventListener('click', (e) => {
-        if(e.target === textSpan) return; // Don't change selection if just clicking to edit
+      el.addEventListener('click', () => {
         direction = type;
         selectedCell = { r: clue.cell[0], c: clue.cell[1] };
         updateSelection();
@@ -243,15 +217,6 @@
     }
     if (selectedCell) break;
   }
-
-  // Export logic
-  document.getElementById('export-btn').addEventListener('click', () => {
-     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-     const dlAnchorElem = document.createElement('a');
-     dlAnchorElem.setAttribute("href", dataStr);
-     dlAnchorElem.setAttribute("download", "crossword_updated.json");
-     dlAnchorElem.click();
-  });
 </script>
 </body>
 </html>
