@@ -1,0 +1,5 @@
+pytest
+Pillow
+numpy
+opencv-python-headless
+Jinja2

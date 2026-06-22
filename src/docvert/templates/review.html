@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Review: {{ title }}</title>
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+  .container { display: flex; gap: 20px; align-items: flex-start; }
+  .info { border: 1px solid #ccc; padding: 20px; border-radius: 5px; }
+  .grid { display: grid; border: 2px solid black; }
+  .cell {
+    width: 20px; height: 20px; border: 1px solid #ccc; position: relative;
+    display: flex; justify-content: center; align-items: center; font-size: 8px;
+  }
+  .cell.blocked { background-color: black; }
+  .cell.open { background-color: white; }
+  .number { position: absolute; top: 1px; left: 1px; }
+  .issues { color: red; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Review Required: {{ review_required }}</h1>
+
+<div class="container">
+  <div>
+    <h3>Source Image</h3>
+    <img src="{{ image_filename }}" alt="Source Image" style="max-width: 400px; border: 1px solid #000;">
+  </div>
+
+  <div class="info">
+    <h3>Detected Grid</h3>
+    <p>Rows: {{ metadata.rows }} | Columns: {{ metadata.columns }}</p>
+    <div class="grid" style="grid-template-columns: repeat({{ metadata.columns }}, 20px); grid-template-rows: repeat({{ metadata.rows }}, 20px);">
+      {% for row in grid %}
+        {% for cell in row %}
+          <div class="cell {{ 'blocked' if cell.blocked else 'open' }}">
+            {% if cell.number %}<span class="number">{{ cell.number }}</span>{% endif %}
+          </div>
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <h3>Issues</h3>
+    <ul class="issues">
+      {% for issue in issues %}
+        <li>{{ issue }}</li>
+      {% else %}
+        <li style="color: green;">No validation issues detected.</li>
+      {% endfor %}
+    </ul>
+
+    <h3>Extracted Data</h3>
+    <pre>{{ json_str }}</pre>
+  </div>
+</div>
+
+</body>
+</html>
