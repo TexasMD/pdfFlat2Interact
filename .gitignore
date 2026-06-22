@@ -1,0 +1,10 @@
+*.pdf
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+output/
+tmp/
+scratch/
+*.log
