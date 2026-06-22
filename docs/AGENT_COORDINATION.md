@@ -2,22 +2,19 @@
 
 ## Current Base
 
-Use `origin/repair/jules-restore` until it is merged. After merge, branch from `origin/main`.
+Branch new work from `origin/main`.
 
 ## Active Task
 
-Interactive review workflow for crossword digitization.
+First-pilot validation setup.
 
-Owner: Jules
+Owner: Codex
 
 ## Files Reserved For Active Task
 
-- `src/docvert/crossword.py`
-- `src/docvert/templates/review.html`
-- `src/docvert/templates/index.html`
-- `tests/test_crossword.py`
+No files are currently reserved for a Jules-owned task.
 
-Codex should not edit these files until Jules’s PR is reviewed unless explicitly asked.
+Jules's interactive review workflow and `repair/jules-restore` work have been merged into `main`. If a new Jules task starts, update this section with the owner, branch, and reserved files before parallel edits begin.
 
 ## Do Not Delete
 
