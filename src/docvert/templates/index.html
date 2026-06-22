@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ title }}</title>
+<style>
+  body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+  .container { display: flex; gap: 20px; }
+  .grid { display: grid; border: 2px solid black; }
+  .cell {
+    width: 30px; height: 30px; border: 1px solid #ccc; position: relative;
+    display: flex; justify-content: center; align-items: center; font-size: 18px; font-weight: bold;
+    text-transform: uppercase;
+  }
+  .cell.blocked { background-color: black; }
+  .cell.open { background-color: white; cursor: pointer; }
+  .cell.selected { background-color: #bbdefb; }
+  .cell.highlight { background-color: #e3f2fd; }
+  .number { position: absolute; top: 2px; left: 2px; font-size: 10px; font-weight: normal; }
+  .clues-container { display: flex; gap: 20px; }
+  .clue-list { max-height: 500px; overflow-y: auto; }
+  .clue-item { cursor: pointer; padding: 2px 5px; }
+  .clue-item.selected { background-color: #bbdefb; font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>{{ title }}</h1>
+<div class="container">
+  <div class="grid" id="grid-container"></div>
+  <div class="clues-container">
+    <div>
+      <h3>Across</h3>
+      <div class="clue-list" id="across-clues"></div>
+    </div>
+    <div>
+      <h3>Down</h3>
+      <div class="clue-list" id="down-clues"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const data = {{ crossword_json|safe }};
+  const gridContainer = document.getElementById('grid-container');
+  const acrossContainer = document.getElementById('across-clues');
+  const downContainer = document.getElementById('down-clues');
+
+  gridContainer.style.gridTemplateColumns = `repeat(${data.metadata.columns}, 30px)`;
+  gridContainer.style.gridTemplateRows = `repeat(${data.metadata.rows}, 30px)`;
+
+  let selectedCell = null;
+  let direction = 'across'; // 'across' or 'down'
+
+  // Render grid
+  const cells = [];
+  data.grid.forEach(row => {
+    const rowCells = [];
+    row.forEach(cellData => {
+      const el = document.createElement('div');
+      el.className = `cell ${cellData.blocked ? 'blocked' : 'open'}`;
+      el.dataset.row = cellData.row;
+      el.dataset.col = cellData.col;
+
+      if (!cellData.blocked) {
+        if (cellData.number) {
+          const num = document.createElement('div');
+          num.className = 'number';
+          num.textContent = cellData.number;
+          el.appendChild(num);
+        }
+
+        const inputSpan = document.createElement('span');
+        el.appendChild(inputSpan);
+
+        el.addEventListener('click', () => {
+          if (selectedCell && selectedCell.r === cellData.row && selectedCell.c === cellData.col) {
+            direction = direction === 'across' ? 'down' : 'across';
+          } else {
+            selectedCell = { r: cellData.row, c: cellData.col };
+          }
+          updateSelection();
+        });
+      }
+      gridContainer.appendChild(el);
+      rowCells.push({ el, data: cellData, inputSpan: el.querySelector('span') });
+    });
+    cells.push(rowCells);
+  });
+
+  // Render clues
+  function renderClueList(clues, container, type) {
+    Object.keys(clues).sort((a,b) => parseInt(a)-parseInt(b)).forEach(num => {
+      const clue = clues[num];
+      const el = document.createElement('div');
+      el.className = 'clue-item';
+      el.dataset.num = num;
+      el.dataset.type = type;
+      el.textContent = `${num}. ${clue.placeholder} (${clue.length})`;
+      el.addEventListener('click', () => {
+        direction = type;
+        selectedCell = { r: clue.cell[0], c: clue.cell[1] };
+        updateSelection();
+      });
+      container.appendChild(el);
+    });
+  }
+  renderClueList(data.clues.across, acrossContainer, 'across');
+  renderClueList(data.clues.down, downContainer, 'down');
+
+  function updateSelection() {
+    if (!selectedCell) return;
+
+    // Clear styles
+    document.querySelectorAll('.cell').forEach(el => {
+      el.classList.remove('selected', 'highlight');
+    });
+    document.querySelectorAll('.clue-item').forEach(el => {
+      el.classList.remove('selected');
+    });
+
+    // Highlight cell
+    const cellEl = cells[selectedCell.r][selectedCell.c].el;
+    cellEl.classList.add('selected');
+
+    // Highlight word and corresponding clue
+    let r = selectedCell.r;
+    let c = selectedCell.c;
+    let currentClueNum = null;
+
+    if (direction === 'across') {
+      while (c > 0 && !cells[r][c-1].data.blocked) c--;
+      currentClueNum = cells[r][c].data.number;
+      while (c < data.metadata.columns && !cells[r][c].data.blocked) {
+        if (r !== selectedCell.r || c !== selectedCell.c) cells[r][c].el.classList.add('highlight');
+        c++;
+      }
+      if (currentClueNum) {
+        const clueEl = document.querySelector(`.clue-item[data-num="${currentClueNum}"][data-type="across"]`);
+        if (clueEl) clueEl.classList.add('selected');
+      }
+    } else {
+      while (r > 0 && !cells[r-1][c].data.blocked) r--;
+      currentClueNum = cells[r][c].data.number;
+      while (r < data.metadata.rows && !cells[r][c].data.blocked) {
+        if (r !== selectedCell.r || c !== selectedCell.c) cells[r][c].el.classList.add('highlight');
+        r++;
+      }
+      if (currentClueNum) {
+        const clueEl = document.querySelector(`.clue-item[data-num="${currentClueNum}"][data-type="down"]`);
+        if (clueEl) clueEl.classList.add('selected');
+      }
+    }
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', (e) => {
+    if (!selectedCell) return;
+
+    let { r, c } = selectedCell;
+    const isLetter = /^[a-zA-Z]$/.test(e.key);
+
+    if (isLetter) {
+      cells[r][c].inputSpan.textContent = e.key;
+      // Move forward
+      if (direction === 'across' && c + 1 < data.metadata.columns && !cells[r][c+1].data.blocked) {
+        selectedCell.c++;
+      } else if (direction === 'down' && r + 1 < data.metadata.rows && !cells[r+1][c].data.blocked) {
+        selectedCell.r++;
+      }
+      updateSelection();
+    } else if (e.key === 'Backspace') {
+      cells[r][c].inputSpan.textContent = '';
+      // Move backward
+      if (direction === 'across' && c - 1 >= 0 && !cells[r][c-1].data.blocked) {
+        selectedCell.c--;
+      } else if (direction === 'down' && r - 1 >= 0 && !cells[r-1][c].data.blocked) {
+        selectedCell.r--;
+      }
+      updateSelection();
+    } else if (e.key === 'ArrowRight') {
+      if (c + 1 < data.metadata.columns && !cells[r][c+1].data.blocked) selectedCell.c++;
+      updateSelection();
+    } else if (e.key === 'ArrowLeft') {
+      if (c - 1 >= 0 && !cells[r][c-1].data.blocked) selectedCell.c--;
+      updateSelection();
+    } else if (e.key === 'ArrowDown') {
+      if (r + 1 < data.metadata.rows && !cells[r+1][c].data.blocked) selectedCell.r++;
+      updateSelection();
+    } else if (e.key === 'ArrowUp') {
+      if (r - 1 >= 0 && !cells[r-1][c].data.blocked) selectedCell.r--;
+      updateSelection();
+    }
+  });
+
+  // Select first cell init
+  for (let r=0; r<data.metadata.rows; r++) {
+    for (let c=0; c<data.metadata.columns; c++) {
+      if (!cells[r][c].data.blocked) {
+        selectedCell = {r, c};
+        updateSelection();
+        break;
+      }
+    }
+    if (selectedCell) break;
+  }
+</script>
+</body>
+</html>
