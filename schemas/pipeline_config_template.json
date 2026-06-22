@@ -1,0 +1,34 @@
+{
+  "version": 3,
+  "render_pages": true,
+  "extract_pdf_text": true,
+  "run_ocr": "production_all_pages_or_selective_during_prototype",
+  "layout_block_detection": true,
+  "block_role_classification": true,
+  "block_coherence_check": true,
+  "symbol_normalization": true,
+  "semantic_validators": [
+    "coin_problem",
+    "arithmetic",
+    "fraction",
+    "matching",
+    "visual_reference",
+    "completeness"
+  ],
+  "outputs": [
+    "index.html",
+    "review.html",
+    "json/all_pages.json",
+    "json/issues.json",
+    "json/correction_memory.json",
+    "json/block_roles.json",
+    "processing_report.md"
+  ],
+  "human_review_required_for": [
+    "high_severity_issues",
+    "visual_reference_required_or_helpful",
+    "contextual_coherence_failure",
+    "ambiguous_fraction_layout",
+    "pdf_text_layer_incomplete"
+  ]
+}
