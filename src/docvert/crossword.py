@@ -6,6 +6,49 @@ import cv2
 import numpy as np
 import shutil
 
+import math
+
+def deskew_image(img):
+    """Detect skew and rotate image to straighten it."""
+    # Use Canny edge detection
+    edges = cv2.Canny(img, 50, 150, apertureSize=3)
+
+    # Find lines
+    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 100, minLineLength=100, maxLineGap=10)
+
+    if lines is None:
+        return img
+
+    angles = []
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
+        # We only care about lines that are roughly horizontal or vertical
+        # Normalize angle to -45 to 45 degrees
+        if -45 <= angle <= 45:
+            angles.append(angle)
+        elif angle > 45:
+            angles.append(angle - 90)
+        elif angle < -45:
+            angles.append(angle + 90)
+
+    if not angles:
+        return img
+
+    median_angle = np.median(angles)
+
+    # If the skew is very small, don't bother rotating
+    if abs(median_angle) < 0.5:
+        return img
+
+    # Rotate image
+    (h, w) = img.shape[:2]
+    center = (w // 2, h // 2)
+    M = cv2.getRotationMatrix2D(center, median_angle, 1.0)
+    rotated = cv2.warpAffine(img, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+
+    return rotated
+
 def find_grid(image_path: str):
     """
     Detect the outer bounding box of the crossword grid.
@@ -15,11 +58,19 @@ def find_grid(image_path: str):
     if img is None:
         return None
 
-    # Binarize
-    _, thresh = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
+    # Deskew
+    img = deskew_image(img)
+
+    # Noise reduction and binarize
+    blurred = cv2.medianBlur(img, 3)
+    thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+    # Morphology to close small gaps
+    kernel = np.ones((5,5), np.uint8)
+    closed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
 
     # Find contours
-    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return None
 
@@ -158,6 +209,51 @@ def assign_clues(grid_data, rows, cols):
 
 from jinja2 import Environment, FileSystemLoader
 
+def validate_grid(grid_data, rows, cols):
+    """
+    Apply standard crossword validation rules.
+    Returns a list of issue strings.
+    """
+    issues = []
+
+    # Standard dimensions
+    standard_sizes = [15, 21]
+    if rows not in standard_sizes or cols not in standard_sizes:
+        issues.append(f"Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).")
+
+    if rows != cols:
+        issues.append("Grid is not square.")
+
+    # Rotational symmetry
+    asymmetric_blocks = 0
+    for r in range(rows):
+        for c in range(cols):
+            if grid_data[r][c]["blocked"] != grid_data[rows - 1 - r][cols - 1 - c]["blocked"]:
+                asymmetric_blocks += 1
+
+    if asymmetric_blocks > 0:
+        issues.append(f"Grid lacks 180-degree rotational symmetry ({asymmetric_blocks} cells mismatch).")
+
+    # Orphaned cells (open cell completely surrounded by boundaries/blocks)
+    orphans = 0
+    for r in range(rows):
+        for c in range(cols):
+            if not grid_data[r][c]["blocked"]:
+                surrounded = True
+                # Check neighbors (up, down, left, right)
+                if r > 0 and not grid_data[r-1][c]["blocked"]: surrounded = False
+                if r < rows - 1 and not grid_data[r+1][c]["blocked"]: surrounded = False
+                if c > 0 and not grid_data[r][c-1]["blocked"]: surrounded = False
+                if c < cols - 1 and not grid_data[r][c+1]["blocked"]: surrounded = False
+
+                if surrounded:
+                    orphans += 1
+
+    if orphans > 0:
+        issues.append(f"Found {orphans} orphaned open cell(s).")
+
+    return issues
+
 def render_template(template_path, context):
     """Render a template using Jinja2."""
     template_dir = Path(template_path).parent
@@ -199,7 +295,12 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
             rows, cols, grid_data = process_res
             across_clues, down_clues = assign_clues(grid_data, rows, cols)
 
-            # Validation: ensure we have clues
+            # Validation
+            validation_issues = validate_grid(grid_data, rows, cols)
+            if validation_issues:
+                issues.extend(validation_issues)
+                require_review = True
+
             if not across_clues and not down_clues:
                 issues.append("No clues found in the grid.")
                 require_review = True
