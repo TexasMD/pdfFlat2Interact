@@ -1,10 +1,29 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Local/private source PDFs and generated outputs
+data/source/
+data/runs/
+outputs/
+output/
+tmp/
+scratch/
+artifacts/
+*.zip
+*.log
+
+# Large/private document and image artifacts
 *.pdf
 *.tif
 *.tiff
 *.png
 *.jpg
 *.jpeg
-output/
-tmp/
-scratch/
-*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
