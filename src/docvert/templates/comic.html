@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ title }}</title>
+<style>
+  body { margin: 0; padding: 20px; background: #333; display: flex; justify-content: center; }
+  .comic-container { position: relative; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+  .comic-bg { display: block; max-width: 100%; height: auto; }
+
+  .text-layer {
+    position: absolute;
+    box-sizing: border-box;
+    /* Visual debug border, can be removed in prod */
+    border: 1px dashed rgba(0, 123, 255, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: black;
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
+    font-size: 14px;
+    padding: 2px;
+    overflow: hidden;
+    cursor: text;
+  }
+
+  .text-layer.speech {
+    /* Optional: further styling specific to speech */
+  }
+
+  .text-layer.narrative {
+    background-color: rgba(255, 255, 200, 0.3); /* Slight yellow tint for narrative */
+  }
+
+  .text-layer::selection { background: #b3d4fc; }
+</style>
+</head>
+<body>
+
+<div class="comic-container" style="width: {{ data.metadata.width }}px; height: {{ data.metadata.height }}px;">
+  <img src="{{ data.metadata.clean_image }}" class="comic-bg" alt="Comic Page">
+
+  {% for region in data.regions %}
+  <div class="text-layer {{ region.type }}"
+       style="left: {{ region.bbox[0] }}px; top: {{ region.bbox[1] }}px; width: {{ region.bbox[2] }}px; height: {{ region.bbox[3] }}px;">
+    {{ region.text }}
+  </div>
+  {% endfor %}
+</div>
+
+</body>
+</html>
