@@ -6,16 +6,17 @@ Branch new work from `origin/main`.
 
 ## Active Task
 
-Stage 3 embedded PDF text extraction for the first three hard-gate pages.
+Stage 4 OCR on rendered page images for the first three hard-gate pages.
 
 Owner: Codex
 
 Current intent:
 
-- Add embedded PDF text extraction tooling for the same three hard-gate pages already rendered in Stage 2.
-- Use extracted PDF text as a hypothesis only, preserving links to source file, page, and rendered page image.
-- Write `data/runs/first_pilot/json/pdf_text.json` as a local/ignored run artifact.
-- Do not run OCR, OCR-vs-PDF comparison, layout detection, reviewer HTML generation, student HTML generation, or conversion in this task.
+- Add OCR tooling for the same three hard-gate page images already rendered in Stage 2.
+- Use OCR text as a visible-text hypothesis only, preserving links to source file, page, rendered page image, OCR engine metadata, word boxes, and confidence scores.
+- Require the Stage 3 PDF-text manifest to be ready before OCR so the pipeline order stays intact.
+- Write `data/runs/first_pilot/json/ocr_text.json` as a local/ignored run artifact.
+- Do not run OCR-vs-PDF comparison, layout detection, reviewer HTML generation, student HTML generation, or conversion in this task.
 
 Current status:
 
@@ -33,14 +34,18 @@ Current status:
   - `data/runs/first_pilot/assets/page_images/sumbridge2_p002.png`
   - `data/runs/first_pilot/assets/page_images/summerbridge_trial_p005.png`
   - `data/runs/first_pilot/json/page_renders.json`
-- Stage 4 OCR has not started.
+- Stage 4 OCR now succeeds for the three rendered hard-gate pages.
+- The local/ignored Stage 4 artifact is `data/runs/first_pilot/json/ocr_text.json`.
+- Current Stage 4 summary: 3 requested pages, 3 OCR pages, 0 failed pages, 565 OCR words, mean confidence 86.02.
+- OCR recovered visible cents symbols on `sumbridge2.pdf` page 2, but OCR output still has ordering/symbol noise that must be handled by Stage 5 comparison and later issue emission.
+- Stage 5 OCR-vs-PDF comparison has not started.
 
 Current files being edited:
 
 - `docs/AGENT_COORDINATION.md`
-- `src/docvert/pdf_text.py`
-- `scripts/extract-hard-gate-pdf-text.ps1`
-- `tests/test_pdf_text.py`
+- `src/docvert/ocr_text.py`
+- `scripts/run-hard-gate-ocr.ps1`
+- `tests/test_ocr_text.py`
 
 ## Collaboration Updates
 
