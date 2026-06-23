@@ -6,32 +6,41 @@ Branch new work from `origin/main`.
 
 ## Active Task
 
-Reviewer interaction contract capture before the next pipeline stage.
+Stage 3 embedded PDF text extraction for the first three hard-gate pages.
 
 Owner: Codex
 
 Current intent:
 
-- Record the review UX requirement that every review-needed step must provide selectable options and a freeform suggestion field.
-- Keep Jules and collaborators aware of this requirement before reviewer-facing UI work begins.
-- Do not run OCR, embedded-text extraction, layout detection, reviewer HTML generation, student HTML generation, or conversion in this task.
+- Add embedded PDF text extraction tooling for the same three hard-gate pages already rendered in Stage 2.
+- Use extracted PDF text as a hypothesis only, preserving links to source file, page, and rendered page image.
+- Write `data/runs/first_pilot/json/pdf_text.json` as a local/ignored run artifact.
+- Do not run OCR, OCR-vs-PDF comparison, layout detection, reviewer HTML generation, student HTML generation, or conversion in this task.
 
 Current status:
 
 - Source manifest is ready for Stage 1/2.
 - The first three hard-gate pages render successfully at 200 DPI.
+- Embedded PDF text extraction now succeeds for the three rendered hard-gate pages.
+- The local/ignored Stage 3 artifact is `data/runs/first_pilot/json/pdf_text.json`.
+- Current Stage 3 summary: 3 requested pages, 3 extracted pages, 0 failed pages, 593 embedded-text words.
+- Stage 3 carries 3 hard-gate risk flags forward for later issue emission:
+  - `possible_layout_block_merge_error` for `sumbridge2.pdf` page 1.
+  - `possible_cents_symbol_misread` for `sumbridge2.pdf` page 2.
+  - `visual_reference_required_or_helpful` for `summerbridge trial.pdf` page 5.
 - Render artifacts are local/ignored:
   - `data/runs/first_pilot/assets/page_images/sumbridge2_p001.png`
   - `data/runs/first_pilot/assets/page_images/sumbridge2_p002.png`
   - `data/runs/first_pilot/assets/page_images/summerbridge_trial_p005.png`
   - `data/runs/first_pilot/json/page_renders.json`
+- Stage 4 OCR has not started.
 
 Current files being edited:
 
 - `docs/AGENT_COORDINATION.md`
-- `docs/07_REVIEW_HTML_SPEC_V4.md`
-- `docs/04_VALIDATION_RULES_V4.md`
-- `docs/11_BACKLOG.md`
+- `src/docvert/pdf_text.py`
+- `scripts/extract-hard-gate-pdf-text.ps1`
+- `tests/test_pdf_text.py`
 
 ## Collaboration Updates
 
