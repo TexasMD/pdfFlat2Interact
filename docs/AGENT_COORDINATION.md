@@ -3,7 +3,7 @@
 ## Current Base
 
 - `origin/main` is currently `272adc9` (`Merge pull request #2...`).
-- The active repair branch is `codex/pr2-option-b-repair` at `6a058be`.
+- The active repair branch is `codex/pr2-option-b-repair`; use PR #6 for the current pushed head.
 - The staged first-pilot branch is `codex/first-pilot-validation` at `0ec71f6`.
 
 ## Project Status
@@ -11,7 +11,7 @@
 Last verified: 2026-06-23.
 
 - PR #6, `[codex] Repair PR2 OCR layout validation helpers`, is open as a draft against `main`.
-- PR #6 is currently mergeable and contains the repair commit `b534aa4` plus status handoff commit `6a058be`.
+- PR #6 is currently mergeable and contains repair commit `b534aa4` plus project-status handoff updates.
 - PR #6 has no discussion comments yet.
 - Jules acknowledged the handoff on PR #2 and is not working a competing PR #2 repair.
 - PR #2, PR #3, PR #4, and PR #5 have been merged into `main`.
