@@ -1,14 +1,34 @@
 import cv2
-import numpy as np
+import re
+from pathlib import Path
 
-def detect_layout_blocks(image_path: str) -> list[tuple[int, int, int, int]]:
+
+def _id_part(value: str | None, fallback: str) -> str:
+    raw = value or fallback
+    stem = Path(raw).stem
+    normalized = re.sub(r"[^A-Za-z0-9]+", "_", stem).strip("_").lower()
+    return normalized or fallback
+
+
+def _page_part(page_num: int | None) -> str:
+    return f"p{page_num:03d}" if page_num is not None else "punknown"
+
+
+def detect_layout_blocks(
+    image_path: str,
+    *,
+    source_file: str | None = None,
+    page_num: int | None = None,
+    run_id: str | None = None,
+) -> list[dict]:
     """
     Detect layout blocks in an image using morphological operations and contour detection.
-    Returns a list of bounding boxes (x, y, w, h) for detected blocks.
+    Returns traceable layout block hypotheses with bounding boxes.
     """
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
         raise ValueError(f"Could not read image from {image_path}")
+    page_height, page_width = img.shape[:2]
 
     # Binarize image (invert so text is white on black background)
     # Using Otsu's thresholding
@@ -25,17 +45,41 @@ def detect_layout_blocks(image_path: str) -> list[tuple[int, int, int, int]]:
     # Find contours
     contours, _ = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    blocks = []
+    boxes = []
     for cnt in contours:
         x, y, w, h = cv2.boundingRect(cnt)
 
         # Filter out very small noise blocks
         area = w * h
         if area > 400: # Arbitrary small threshold, can be tuned
-            blocks.append((x, y, w, h))
+            boxes.append((x, y, w, h))
 
     # Sort blocks top-to-bottom, then left-to-right
-    blocks.sort(key=lambda b: (b[1], b[0]))
+    boxes.sort(key=lambda b: (b[1], b[0]))
+
+    source_part = _id_part(source_file, _id_part(image_path, "image"))
+    page_part = _page_part(page_num)
+    blocks = []
+    for idx, (x, y, w, h) in enumerate(boxes, start=1):
+        block = {
+            "id": f"layout-{source_part}-{page_part}-b{idx:04d}",
+            "x": int(x),
+            "y": int(y),
+            "w": int(w),
+            "h": int(h),
+            "text": "",
+            "page_width": int(page_width),
+            "page_height": int(page_height),
+            "source_file": source_file,
+            "page_num": page_num,
+            "image_path": image_path,
+            "rendered_image_path": image_path,
+            "run_id": run_id,
+            "status": "layout_hypothesis",
+            "warnings": [],
+        }
+        block["role"] = classify_block_role(block)
+        blocks.append(block)
 
     return blocks
 
@@ -54,7 +98,24 @@ def classify_block_role(block_dict: dict) -> str:
     page_h = block_dict.get('page_height', 1000)
     text = block_dict.get('text', "")
 
+    text_normalized = text.strip().lower()
     area_ratio = (w * h) / (page_w * page_h) if page_w and page_h else 0
+    margin_block = (x > page_w * 0.65 or x + w < page_w * 0.35) and w < page_w * 0.45
+    visual_keywords = (
+        "number line", "map", "graph", "chart", "table", "diagram",
+        "picture", "grid", "crossword", "shown", "above", "below",
+    )
+    explicit_visual_hint = (
+        bool(block_dict.get("visual_type"))
+        or bool(block_dict.get("contains_number_line"))
+    )
+    visual_keyword_shape_hint = any(keyword in text_normalized for keyword in visual_keywords) and area_ratio > 0.08
+    wide_thin_low_text = (
+        w > page_w * 0.45
+        and h < page_h * 0.08
+        and len(text_normalized) < 20
+        and area_ratio > 0.01
+    )
 
     # 1. Footer check
     # If it's very low on the page and relatively thin
@@ -62,14 +123,14 @@ def classify_block_role(block_dict: dict) -> str:
         return "footer"
 
     # 2. Factoid/Sidebar check
-    # If it's pushed far to one margin, relatively narrow, and not at the very top
-    if (x > page_w * 0.7 or x + w < page_w * 0.3) and w < page_w * 0.4 and y > page_h * 0.1:
+    # If it's pushed far to one margin and relatively narrow, including top-corner callouts.
+    if margin_block and y < page_h * 0.75:
         return "factoid_sidebar"
 
     # 3. Visual Reference check
     # If it occupies a significant area but has very little text (or specific visual keywords)
     # Note: text density check would be ideal here if text is populated
-    if area_ratio > 0.15 and len(text.strip()) < 50:
+    if explicit_visual_hint or visual_keyword_shape_hint or (area_ratio > 0.15 and len(text_normalized) < 50) or wide_thin_low_text:
         return "visual_reference"
 
     # 4. Instruction check
