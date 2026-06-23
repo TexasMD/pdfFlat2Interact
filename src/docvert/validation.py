@@ -28,7 +28,9 @@ def validate_block_coherence(blocks: list[dict]) -> list[dict]:
                     issues.append({
                         "id": f"coherence-{issue_idx}",
                         "message": "Instruction block overlaps with factoid/sidebar block (possible merge contamination).",
-                        "blocks": [block_a.get('id', f"idx-{i}"), block_b.get('id', f"idx-{j}")]
+                        "blocks": [block_a.get('id', f"idx-{i}"), block_b.get('id', f"idx-{j}")],
+                        "source_file": block_a.get("source_file", "unknown"),
+                        "page_num": block_a.get("page_num", 0)
                     })
                     issue_idx += 1
 
@@ -46,7 +48,9 @@ def validate_block_coherence(blocks: list[dict]) -> list[dict]:
                 issues.append({
                     "id": f"coherence-{issue_idx}",
                     "message": "Instruction block appears below exercise items (impossible reading order).",
-                    "blocks": [block.get('id', "unknown")]
+                    "blocks": [block.get('id', "unknown")],
+                    "source_file": block.get("source_file", "unknown"),
+                    "page_num": block.get("page_num", 0)
                 })
                 issue_idx += 1
 

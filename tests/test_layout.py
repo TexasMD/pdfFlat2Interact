@@ -33,11 +33,15 @@ def test_detect_layout_blocks(temp_dir):
     img_path = temp_dir / "test_layout.png"
     generate_blocks_image(img_path)
 
-    blocks = detect_layout_blocks(str(img_path))
+    blocks = detect_layout_blocks(str(img_path), source_file="test.pdf", page_num=1)
 
     # We drew 3 distinct blocks, dilation might merge things if they were close,
     # but here they are far apart.
     assert len(blocks) == 3
+    assert blocks[0]["source_file"] == "test.pdf"
+    assert blocks[0]["page_num"] == 1
+    assert "test_layout.png" in blocks[0]["image_path"]
+    assert blocks[0]["id"].startswith("test.pdf-p1-block-")
 
 def test_classify_block_role():
     # Test Instruction

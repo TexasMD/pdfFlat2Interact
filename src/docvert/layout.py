@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 
-def detect_layout_blocks(image_path: str) -> list[tuple[int, int, int, int]]:
+def detect_layout_blocks(image_path: str, source_file: str = "unknown", page_num: int = 0) -> list[dict]:
     """
     Detect layout blocks in an image using morphological operations and contour detection.
-    Returns a list of bounding boxes (x, y, w, h) for detected blocks.
+    Returns a list of dictionaries for detected blocks, including traceability metadata.
     """
     img = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     if img is None:
@@ -32,10 +32,19 @@ def detect_layout_blocks(image_path: str) -> list[tuple[int, int, int, int]]:
         # Filter out very small noise blocks
         area = w * h
         if area > 400: # Arbitrary small threshold, can be tuned
-            blocks.append((x, y, w, h))
+            blocks.append({
+                "x": x, "y": y, "w": w, "h": h
+            })
 
     # Sort blocks top-to-bottom, then left-to-right
-    blocks.sort(key=lambda b: (b[1], b[0]))
+    blocks.sort(key=lambda b: (b['y'], b['x']))
+
+    # Attach traceability and ID
+    for i, b in enumerate(blocks):
+        b["id"] = f"{source_file}-p{page_num}-block-{i+1}"
+        b["source_file"] = source_file
+        b["page_num"] = page_num
+        b["image_path"] = image_path
 
     return blocks
 

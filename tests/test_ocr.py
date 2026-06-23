@@ -42,3 +42,27 @@ def test_extract_text_and_boxes(temp_dir):
         assert "w" in r
         assert "h" in r
         assert "conf" in r
+
+def test_extract_text_and_boxes_decimal_conf(temp_dir, monkeypatch):
+    """Test that we correctly parse decimal string confidences like '95.5'."""
+    img_path = temp_dir / "test_ocr_decimal.png"
+    generate_text_image(img_path, "Test")
+
+    # Mock pytesseract.image_to_data to return a decimal confidence
+    def mock_image_to_data(*args, **kwargs):
+        return {
+            'text': ['Test'],
+            'conf': ['95.5'],
+            'left': [10],
+            'top': [10],
+            'width': [100],
+            'height': [20]
+        }
+
+    import pytesseract
+    monkeypatch.setattr(pytesseract, "image_to_data", mock_image_to_data)
+
+    results = extract_text_and_boxes(str(img_path))
+    assert len(results) == 1
+    assert results[0]['conf'] == 95.5
+    assert results[0]['text'] == 'Test'
