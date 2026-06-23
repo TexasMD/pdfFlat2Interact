@@ -6,14 +6,14 @@ Branch new work from `origin/main`.
 
 ## Active Task
 
-Stage 2 hard-gate page rendering setup after first-pilot source intake verification.
+Reviewer interaction contract capture before the next pipeline stage.
 
 Owner: Codex
 
 Current intent:
 
-- Add rendering-only tooling for the first three hard-gate pages.
-- Write rendered page images and render metadata under ignored `data/runs/first_pilot/` paths.
+- Record the review UX requirement that every review-needed step must provide selectable options and a freeform suggestion field.
+- Keep Jules and collaborators aware of this requirement before reviewer-facing UI work begins.
 - Do not run OCR, embedded-text extraction, layout detection, reviewer HTML generation, student HTML generation, or conversion in this task.
 
 Current status:
@@ -28,10 +28,10 @@ Current status:
 
 Current files being edited:
 
-- `src/docvert/page_render.py`
-- `scripts/render-hard-gate-pages.ps1`
-- `tests/test_page_render.py`
 - `docs/AGENT_COORDINATION.md`
+- `docs/07_REVIEW_HTML_SPEC_V4.md`
+- `docs/04_VALIDATION_RULES_V4.md`
+- `docs/11_BACKLOG.md`
 
 ## Collaboration Updates
 
@@ -43,6 +43,14 @@ Keep Jules and other collaborators aware of edits and intentions before parallel
 - explicit non-goals and stop conditions.
 
 If work changes scope, update this file before making the broader edit.
+
+## Review Interaction Requirement
+
+Any step, panel, issue, correction, page status, or gate that requires human review must provide:
+
+- explicit options the reviewer can choose from;
+- a freeform suggestion or notes field;
+- saved traceability from the choice and suggestion back to source file, page, rendered page image, and affected issue/block/exercise where applicable.
 
 ## Files Reserved For Active Task
 

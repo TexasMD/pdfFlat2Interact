@@ -99,7 +99,7 @@ Project: `docvert`
 | P1 | REV-004 | Show layout blocks, roles, confidence, and bboxes/overlays. | Required for block-aware validation. |
 | P1 | REV-005 | Show issues with severity, status, blocking effect, evidence, and recommended action. | Required by V4 issue taxonomy. |
 | P1 | REV-006 | Show visual references and correction-memory suggestions. | Required for visual and correction-memory gates. |
-| P2 | REV-007 | Add review actions. | Accept/edit/reject/downgrade/carry-forward decisions can later update correction memory. |
+| P2 | REV-007 | Add review actions. | Accept/edit/reject/downgrade/carry-forward decisions can later update correction memory. Every review-needed step must provide selectable options plus a freeform suggestion or notes field. |
 
 ## 9. Phase 5 — Student output backlog
 
@@ -133,6 +133,7 @@ The first extraction pilot is done only when:
 - Correction-memory suggestions or applied corrections conform to the V4 schema/rules and do not silently rewrite task-bearing content without visual support.
 - High-severity issues are either fixed, explicitly carried into reviewer QA, or stop the run.
 - Reviewer-facing QA artifacts follow `07_REVIEW_HTML_SPEC_V4.md` and expose source images, extracted text, OCR text, comparison evidence, block roles, issues, visual references, and suggested corrections before any student-facing release.
+- Any reviewer-required step exposes explicit choices for the reviewer and a freeform suggestion or notes field.
 - Student-facing output is not produced as a clean release unless it satisfies `08_STUDENT_HTML_SPEC_V4.md`; if produced later for preview, it must be clearly gated/withheld for blocked pages.
 - No larger batch begins until the first-pilot report is reviewed and accepted.
 

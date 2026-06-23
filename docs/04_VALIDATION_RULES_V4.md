@@ -385,7 +385,8 @@ For each page, include:
 10. All issues for the page, grouped by severity and blocking status.
 11. Suggested fixes and correction-memory matches.
 12. Reviewer actions: accept, edit, reject, mark false positive, downgrade/upgrade severity, require rerun.
-13. Page release category and rationale.
+13. For every review-needed action, selectable reviewer options plus a freeform suggestion or notes field.
+14. Page release category and rationale.
 
 For the batch, include:
 

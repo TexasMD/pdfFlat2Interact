@@ -1,6 +1,6 @@
 # 07 — DOCVERT Reviewer HTML Specification V4
 
-Updated: 2026-06-13 UTC
+Updated: 2026-06-23 UTC
 Status: Durable Project-source renderer specification
 Project: `docvert`
 Mode: Specification only — no OCR, no extraction, no conversion, no reviewer HTML generation, no student HTML generation
@@ -23,6 +23,7 @@ The reviewer page is not cosmetic output. It is a validation artifact. It must e
 6. Reviewer HTML may show unresolved problems. Student HTML must not be released from unresolved critical or unreviewed major task-bearing issues.
 7. Every page, block, exercise, issue, input field, visual reference, and correction-memory suggestion must trace back to source file, page, and rendered page image.
 8. The reviewer page must be useful even if the extraction is bad. Bad extraction should look obviously bad, not quietly plausible.
+9. Any step, panel, issue, correction, page status, or gate that needs human review must present explicit reviewer options and a freeform suggestion or notes field.
 
 ## 3. Required input JSON files
 
@@ -271,6 +272,12 @@ Each issue card must show:
 
 Issue controls should initially be read-only if no reviewer-edit workflow exists. When editing is implemented, allowed actions are: accept, reject, edit, downgrade, escalate, mark fixed, mark intentionally carried forward, and create correction-memory candidate.
 
+Every editable issue-control surface must include:
+
+- a choice control with the available reviewer actions;
+- a freeform suggestion or notes field;
+- a saved review-action record that preserves the chosen option, suggestion text, reviewer timestamp, and traceability to the issue, source page, and rendered page image.
+
 ### 8.9 Correction-memory suggestions panel
 
 Show correction-memory suggestions separately from confirmed content.
@@ -287,6 +294,8 @@ Each suggestion must show:
 - link to the issue record created or modified by the suggestion.
 
 Rules must be conservative. Suggestions do not silently make the page release-ready.
+
+Every correction-memory suggestion that needs review must expose reviewer options such as accept, reject, edit suggestion, carry forward, or require rerun, plus a freeform suggestion or notes field. Suggestions must never force a binary decision when the reviewer needs to propose a better correction.
 
 ### 8.10 Raw JSON/debug panel
 
@@ -305,7 +314,32 @@ Reviewer rendering must always surface unresolved issues. It may render incomple
 | Missing required JSON | Diagnostic page shown; affected pages blocked or review-required. |
 | Missing required visual asset | Page blocked if visual is task-bearing. |
 
-## 10. Accessibility and usability requirements
+## 10. Reviewer action controls
+
+Any review-needed item must avoid passive-only display. It must provide both structured choices and a freeform response path.
+
+Minimum controls:
+
+- selectable reviewer option set appropriate to the item type;
+- suggestion or notes field;
+- save/apply action;
+- visible saved state after the reviewer acts;
+- traceability link to source file, page, rendered page image, and affected issue/block/exercise/correction-memory record where applicable.
+
+Recommended option sets:
+
+| Review target | Required options |
+|---|---|
+| Page status | accept status, mark blocked, require rerun, mark needs human correction |
+| Issue | accept issue, reject as false positive, edit, mark fixed, downgrade severity, escalate severity, carry forward |
+| Extracted text or OCR/PDF disagreement | accept hypothesis, propose correction, require visual recheck, require rerun |
+| Block role | accept role, change role, split block, merge blocks, mark unknown |
+| Visual reference | accept crop/SVG, request crop adjustment, require recreation, mark missing/blocking |
+| Correction-memory suggestion | accept, reject, edit suggestion, carry forward, require rerun |
+
+The suggestion or notes field must be available for every option set, even when the reviewer chooses a simple accept/reject action.
+
+## 11. Accessibility and usability requirements
 
 Reviewer HTML must be usable by a tired human trying to find subtle errors before the machinery invents nonsense with a straight face.
 
@@ -324,7 +358,7 @@ Minimum requirements:
 - local-file friendly relative paths;
 - print summary for issue lists and page status.
 
-## 11. Desktop and mobile layout expectations
+## 12. Desktop and mobile layout expectations
 
 Desktop/tablet default:
 
@@ -342,7 +376,7 @@ Mobile/narrow layout:
 
 Mobile support is required for review, but dense QA work is expected to be better on desktop. Do not mutilate the evidence to fit a phone screen.
 
-## 12. First-pilot reviewer rendering limits
+## 13. First-pilot reviewer rendering limits
 
 For the first pilot, `review.html` is limited to the approved eight pages:
 
@@ -363,7 +397,7 @@ The first three pages are hard gates:
 
 If any hard gate fails and the pipeline does not emit clear blocking issues with reviewer evidence, stop expansion and fix the validator/renderer. Do not continue toward student release.
 
-## 13. Reviewer page acceptance checklist
+## 14. Reviewer page acceptance checklist
 
 `review.html` is acceptable for the pilot only when:
 
@@ -375,6 +409,7 @@ If any hard gate fails and the pipeline does not emit clear blocking issues with
 - visual references are shown with crop/SVG status;
 - issue flags are visible with severity and blocking effect;
 - correction-memory suggestions are visible and not confused with facts;
+- all review-needed items provide selectable options and a freeform suggestion or notes field;
 - each page status is clear;
 - source traceability is intact;
 - unresolved blockers cannot be mistaken for cleared pages.
