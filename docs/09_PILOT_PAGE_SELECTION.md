@@ -1,7 +1,7 @@
 # 09_PILOT_PAGE_SELECTION.md
 
-Updated: 2026-06-13 UTC
-Status: Durable pilot-selection source, pending human approval
+Updated: 2026-06-23 UTC
+Status: Durable pilot-selection source, pending source availability
 Project: `docvert`
 Mode: Pilot selection only — no OCR, no extraction, no conversion, no student HTML, no reviewer HTML
 
@@ -15,9 +15,9 @@ This file does **not** authorize extraction or HTML generation.
 
 ## 2. Active source PDFs used
 
-Only PDFs confirmed present in the active `docvert` Project environment are eligible for this pilot.
+Only PDFs confirmed present by source-intake manifest in the active `docvert` Project environment are eligible for processing. The current checkout does not contain the expected source PDFs, so this page set remains a selection target until source files are supplied and verified.
 
-| Active source PDF | Pilot use |
+| Expected source PDF | Pilot use |
 |---|---|
 | `summerbridge trial.pdf` | Required prior number-line / spatial-layout regression source. |
 | `sumbridge2.pdf` | Core first-pilot regression source for factoid/sidebar separation, cents-symbol validation, vertical arithmetic, and word-bank handling. |
@@ -25,9 +25,9 @@ Only PDFs confirmed present in the active `docvert` Project environment are elig
 | `sumbridge4.pdf` | Fraction-table visual-reference source. |
 | `sumbridge5.pdf` | Crossword/grid visual-reference source and mostly text-based passage source. |
 
-Confirmed active but not selected for the first pilot:
+Expected later but not selected for the first pilot:
 
-| Active source PDF | Reason not selected |
+| Expected source PDF | Reason not selected |
 |---|---|
 | `sumbridge6.pdf` | Better reserved for later answer-page / answer-key exclusion testing after first-pilot extraction logic is stable. |
 
@@ -49,7 +49,7 @@ The first pilot uses 8 pages. This is the maximum requested size, but it is just
 |---:|---|---|---|---|---|---|
 | 1 | `sumbridge2.pdf`, page 1 | Block-coherence and factoid/sidebar separation. | Canonical case where linear extraction can merge the abbreviation instruction with the unrelated earthquake factoid. Also tests matching columns and sequence/order prompts. | Factoid merged into instruction; abbreviation columns interleaved; government sequence items detached; footer/decorative text included. | Block-role classification; block-coherence check; `sidebar_factoid_detected`; `possible_layout_block_merge_error`; matching-column completeness; prompt/item grouping. | **Preserves** prior factoid/sidebar regression. |
 | 2 | `sumbridge2.pdf`, page 2 | Cents-symbol and money semantic validation. | Canonical case where visible cents values such as `11¢` and `47¢` can become `110` and `470`. Also includes answer lines and a second noun-form section. | Cents symbol dropped or converted to zero; two sections merged; coin art mistaken for content; item numbering errors. | OCR-vs-PDF-text comparison; cents-symbol normalization; coin-problem semantic validator; visible-symbol confirmation; item count check; issue logging. | **Preserves** prior cents-symbol regression. |
-| 3 | `summerbridge trial.pdf`, page 5 | Number-line / spatial-layout / visual-reference preservation. | Required prior regression page now that `summerbridge trial.pdf` is confirmed active. The number line is necessary to answer the integer-location items. | Number line omitted; tick marks or letter positions lost; minus signs corrupted; comparison and absolute-value symbols flattened; reading passage grouped with math task. | Visual-reference validator; number-line crop/SVG verification; label/tick alignment; math-symbol check; answer-input count; section-boundary check. | **Preserves** prior number-line visual-reference regression. |
+| 3 | `summerbridge trial.pdf`, page 5 | Number-line / spatial-layout / visual-reference preservation. | Required prior regression page once `summerbridge trial.pdf` is supplied and verified. The number line is necessary to answer the integer-location items. | Number line omitted; tick marks or letter positions lost; minus signs corrupted; comparison and absolute-value symbols flattened; reading passage grouped with math task. | Visual-reference validator; number-line crop/SVG verification; label/tick alignment; math-symbol check; answer-input count; section-boundary check. | **Preserves** prior number-line visual-reference regression. |
 | 4 | `sumbridge2.pdf`, page 6 | Vertical arithmetic plus word-bank/fill-in handling. | Adds a true computation page with stacked addition and a separate possessive-noun word-bank exercise. | Vertical arithmetic flattened; plus signs/operands lost; thousands separators misread; word bank detached; math and grammar sections merged. | Arithmetic validator; vertical-layout check; operator/operand completeness; numbered-item sequence; word-bank attachment; blank/input count. | **Approximates/extends** vertical arithmetic and word-bank failure coverage. |
 | 5 | `sumbridge5.pdf`, page 8 | Mostly text-based passage and response fields. | Provides a cleaner text-heavy baseline so the pilot is not only visual or math stress cases. | Paragraphs split/joined incorrectly; quotation marks or punctuation corrupted; response lines overcounted or missed; title/prompt merged; footer included. | Passage completeness; paragraph order; punctuation sanity; prompt/response grouping; five-response-field check; footer exclusion. | **New baseline** test; no prior regression replaced. |
 | 6 | `sumbridge3.pdf`, page 3 | Structured number-family and prefix/suffix grouping. | Tests grouped math facts, table-like regions, prefix/suffix blanks, and sentence-writing prompts on one page. | Operators dropped; blue table/grid not recognized; prefixes/suffixes detached from base words; sentence lines mistaken for extra prompts. | Table/grid structure check; operator/symbol preservation; grouped-exercise completeness; blank/input count; section-boundary validation. | **Approximates** prior structured nonvisual Number Families target. |
@@ -75,8 +75,8 @@ The first pilot uses 8 pages. This is the maximum requested size, but it is just
 |---|---|---|
 | Factoid/sidebar separation: abbreviation instruction must not merge with earthquake factoid. | Preserved. | `sumbridge2.pdf`, page 1 |
 | Cents-symbol validation: `11¢`, `47¢`, etc. must not become trailing-zero integers. | Preserved. | `sumbridge2.pdf`, page 2 |
-| Number-line visual-reference preservation. | Preserved because `summerbridge trial.pdf` is active. | `summerbridge trial.pdf`, page 5 |
-| Structured Number Families conversion. | Approximated using an active structured page. | `sumbridge3.pdf`, page 3 |
+| Number-line visual-reference preservation. | Preserved once `summerbridge trial.pdf` is supplied and verified. | `summerbridge trial.pdf`, page 5 |
+| Structured Number Families conversion. | Approximated using an expected structured page once supplied and verified. | `sumbridge3.pdf`, page 3 |
 | Fraction/table visual-reference handling. | Approximated and expanded. | `sumbridge4.pdf`, page 2 |
 | Crossword/grid visual-reference handling. | Added as an expanded stress test. | `sumbridge5.pdf`, page 2 |
 | Clock/envelope spatial task. | Deferred; not needed in the first 8 pages. | Future candidate: `sumbridge5.pdf`, page 7 |

@@ -1,0 +1,76 @@
+{
+  "manifest_version": 1,
+  "pipeline_version": 4,
+  "intended_batch": "first_pilot_validation",
+  "source_dir": "data/source",
+  "output_path": "data/runs/first_pilot/source_manifest.json",
+  "sources": [
+    {
+      "source_id": "sumbridge2",
+      "filename": "sumbridge2.pdf",
+      "selected_pages": [1, 2, 6],
+      "permission_or_use_notes": "First-pilot source for factoid/sidebar separation, cents-symbol validation, vertical arithmetic, and word-bank handling.",
+      "pilot_roles": [
+        "factoid_sidebar_separation",
+        "cents_symbol_money_validation",
+        "vertical_arithmetic_word_bank"
+      ]
+    },
+    {
+      "source_id": "summerbridge_trial",
+      "filename": "summerbridge trial.pdf",
+      "selected_pages": [5],
+      "permission_or_use_notes": "First-pilot source for number-line visual-reference preservation.",
+      "pilot_roles": [
+        "number_line_visual_reference"
+      ]
+    },
+    {
+      "source_id": "sumbridge5",
+      "filename": "sumbridge5.pdf",
+      "selected_pages": [8, 2],
+      "permission_or_use_notes": "First-pilot source for text-heavy response baseline and crossword/grid visual-reference stress.",
+      "pilot_roles": [
+        "text_passage_response_baseline",
+        "crossword_grid_visual_reference"
+      ]
+    },
+    {
+      "source_id": "sumbridge3",
+      "filename": "sumbridge3.pdf",
+      "selected_pages": [3],
+      "permission_or_use_notes": "First-pilot source for number-family grid and prefix/suffix grouping.",
+      "pilot_roles": [
+        "number_family_grid",
+        "prefix_suffix_grouping"
+      ]
+    },
+    {
+      "source_id": "sumbridge4",
+      "filename": "sumbridge4.pdf",
+      "selected_pages": [2],
+      "permission_or_use_notes": "First-pilot source for fraction-table visual dependency and fraction-layout validation.",
+      "pilot_roles": [
+        "fraction_table_visual_reference",
+        "fraction_layout_validation"
+      ]
+    }
+  ],
+  "hard_gates": [
+    {
+      "id": "layout_factoid_separation_sumbridge2_p1",
+      "source_id": "sumbridge2",
+      "page": 1
+    },
+    {
+      "id": "money_cents_symbol_sumbridge2_p2",
+      "source_id": "sumbridge2",
+      "page": 2
+    },
+    {
+      "id": "number_line_visual_reference",
+      "source_id": "summerbridge_trial",
+      "page": 5
+    }
+  ]
+}
