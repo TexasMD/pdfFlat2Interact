@@ -215,20 +215,23 @@ from jinja2 import Environment, FileSystemLoader
 def validate_grid(grid_data, rows, cols, start_issue_idx=1):
     """
     Apply standard crossword validation rules.
-    Returns a list of issue dicts and the next available issue ID.
+    Returns a list of issue dicts, the next available issue ID, and a boolean indicating if blocking issues exist.
     """
     issues = []
     issue_idx = start_issue_idx
+    has_blocking_issues = False
 
-    def add_issue(msg):
-        nonlocal issue_idx
+    def add_issue(msg, is_blocking=True):
+        nonlocal issue_idx, has_blocking_issues
         issues.append({"id": f"issue-{issue_idx}", "message": msg})
         issue_idx += 1
+        if is_blocking:
+            has_blocking_issues = True
 
     # Standard dimensions
     standard_sizes = [15, 21]
     if rows not in standard_sizes or cols not in standard_sizes:
-        add_issue(f"Advisory: Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).")
+        add_issue(f"Advisory: Grid size {rows}x{cols} is non-standard (expected 15x15 or 21x21).", is_blocking=False)
 
     if rows != cols:
         add_issue("Grid is not square.")
@@ -261,7 +264,7 @@ def validate_grid(grid_data, rows, cols, start_issue_idx=1):
     if orphans > 0:
         add_issue(f"Found {orphans} orphaned open cell(s).")
 
-    return issues, issue_idx
+    return issues, issue_idx, has_blocking_issues
 
 def render_template(template_path, context):
     """Render a template using Jinja2."""
@@ -283,14 +286,14 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
     shutil.copy(image_path, out_dir / img_name)
 
     issues = []
-
     issue_idx = 1
+    require_review_computed = False
 
     grid_res = find_grid(image_path)
     if not grid_res:
         issues.append({"id": f"issue-{issue_idx}", "message": "Failed to detect outer crossword grid bounding box."})
         issue_idx += 1
-        require_review = True
+        require_review_computed = True
         grid_data = []
         rows, cols = 0, 0
         across_clues, down_clues = {}, {}
@@ -300,7 +303,7 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
         if not process_res or process_res[0] is None:
             issues.append({"id": f"issue-{issue_idx}", "message": "Failed to segment grid cells."})
             issue_idx += 1
-            require_review = True
+            require_review_computed = True
             grid_data = []
             rows, cols = 0, 0
             across_clues, down_clues = {}, {}
@@ -308,16 +311,31 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
             rows, cols, grid_data = process_res
             across_clues, down_clues = assign_clues(grid_data, rows, cols)
 
+            # OCR Clue Extraction
+            ocr_across, ocr_down = extract_clue_text_from_image(img_gray, best_rect)
+
+            # Apply OCR text to assigned clues
+            for num, clue in across_clues.items():
+                if num in ocr_across:
+                    clue["placeholder"] = ocr_across[num]
+            for num, clue in down_clues.items():
+                if num in ocr_down:
+                    clue["placeholder"] = ocr_down[num]
+
             # Validation
-            validation_issues, issue_idx = validate_grid(grid_data, rows, cols, issue_idx)
+            validation_issues, issue_idx, has_blocking = validate_grid(grid_data, rows, cols, issue_idx)
             if validation_issues:
                 issues.extend(validation_issues)
-                require_review = True
+                if has_blocking:
+                    require_review_computed = True
 
             if not across_clues and not down_clues:
                 issues.append({"id": f"issue-{issue_idx}", "message": "No clues found in the grid."})
                 issue_idx += 1
-                require_review = True
+                require_review_computed = True
+
+    if require_review_computed:
+        require_review = True
 
     # Build review targets
     review_targets = []
@@ -412,3 +430,73 @@ def digitize_crossword_image(image_path: str, output_dir: str, *, title: str = N
     review_html = render_template(template_dir / "review.html", review_context)
     with open(out_dir / "review.html", "w") as f:
         f.write(review_html)
+
+import pytesseract
+import re
+
+def extract_clue_text_from_image(img, grid_rect):
+    """
+    Find text regions outside the grid_rect, run OCR, and parse clues.
+    Returns (across_clues_text, down_clues_text) as dictionaries mapping number to string.
+    """
+    x, y, w, h = grid_rect
+    h_img, w_img = img.shape[:2]
+
+    # Create a mask covering everything EXCEPT the grid
+    mask = np.ones((h_img, w_img), dtype=np.uint8) * 255
+    cv2.rectangle(mask, (x, y), (x+w, y+h), 0, -1)
+
+    # Apply mask
+    img_outside = cv2.bitwise_and(img, mask)
+
+    # Run OCR on the entire image outside the grid
+    # --psm 6 assumes a single uniform block of text.
+    # We could also use --psm 4 (assume a single column of text of variable sizes)
+    # or --psm 3 (Fully automatic page segmentation, but no OSD)
+    text = pytesseract.image_to_string(img_outside, config='--psm 3')
+
+    return parse_clues_from_text(text)
+
+def parse_clues_from_text(text):
+    """
+    Parse OCR text to extract Across and Down clues.
+    """
+    across_clues = {}
+    down_clues = {}
+
+    current_section = None
+
+    for line in text.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+
+        # Check for headers
+        if re.match(r"(?i)^Across\s*$", line):
+            current_section = across_clues
+            continue
+        elif re.match(r"(?i)^Down\s*$", line):
+            current_section = down_clues
+            continue
+
+        if current_section is not None:
+            # Look for clues like "1. A type of dog" or "1 A type of dog"
+            match = re.match(r"^(\d+)[.)]?\s*(.*)", line)
+            if match:
+                num = match.group(1)
+                clue_text = match.group(2)
+                # If there's already text, append (could be multiline clue, though rare)
+                if num in current_section:
+                    current_section[num] += " " + clue_text
+                else:
+                    current_section[num] = clue_text
+            else:
+                # Might be a continuation of the previous clue if the OCR broke lines
+                # But it's risky without context. We'll append to the last seen clue if possible.
+                if current_section:
+                    keys = list(current_section.keys())
+                    if keys:
+                        last_key = keys[-1]
+                        current_section[last_key] += " " + line
+
+    return across_clues, down_clues

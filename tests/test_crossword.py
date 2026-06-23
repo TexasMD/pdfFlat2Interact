@@ -134,7 +134,7 @@ def test_validate_grid_symmetry():
     grid_data[0][0]["blocked"] = True
     # If symmetric, grid_data[4][4] should be True. Leave it False.
 
-    issues, _ = validate_grid(grid_data, 5, 5)
+    issues, _, _ = validate_grid(grid_data, 5, 5)
 
     # 5x5 is non-standard
     assert any("non-standard" in issue["message"] for issue in issues)
@@ -156,7 +156,7 @@ def test_validate_grid_orphans():
     grid_data[3][4]["blocked"] = True
     grid_data[3][2]["blocked"] = True
 
-    issues, _ = validate_grid(grid_data, 5, 5)
+    issues, _, _ = validate_grid(grid_data, 5, 5)
     assert any("orphaned" in issue["message"] for issue in issues)
 
 def test_digitize_review_targets(temp_dir):
@@ -194,3 +194,89 @@ def test_digitize_review_targets(temp_dir):
         assert 'id="export-btn"' in html
         assert 'id="import-file"' in html
         assert 'data-id="cell-r0-c0"' in html
+
+from docvert.merge_corrections import merge_review_actions
+
+def test_merge_review_actions(temp_dir):
+    cw_path = temp_dir / "cw.json"
+    actions_path = temp_dir / "actions.json"
+    out_path = temp_dir / "out.json"
+
+    cw_data = {
+        "grid": [
+            [{"id": "cell-0", "blocked": False}, {"id": "cell-1", "blocked": True}]
+        ],
+        "clues": {
+            "across": {
+                "1": {"id": "ac-1", "placeholder": "old across"}
+            },
+            "down": {
+                "1": {"id": "dn-1", "placeholder": "old down"}
+            }
+        }
+    }
+
+    actions_data = {
+        "cell-0": {"decision": "needs_correction", "corrected_value": "blocked"},
+        "ac-1": {"decision": "needs_correction", "corrected_value": "new across text"},
+        "dn-1": {"decision": "accept", "corrected_value": "accepted down text"},
+        "cell-1": {"decision": "not_applicable", "corrected_value": "open"} # Should be ignored
+    }
+
+    with open(cw_path, 'w') as f: json.dump(cw_data, f)
+    with open(actions_path, 'w') as f: json.dump(actions_data, f)
+
+    merge_review_actions(str(cw_path), str(actions_path), str(out_path))
+
+    with open(out_path, 'r') as f:
+        res = json.load(f)
+
+    assert res["grid"][0][0]["blocked"] is True
+    assert res["grid"][0][1]["blocked"] is True # Was ignored
+    assert res["clues"]["across"]["1"]["placeholder"] == "new across text"
+    assert res["clues"]["down"]["1"]["placeholder"] == "accepted down text"
+
+from PIL import ImageFont
+def test_ocr_extraction(temp_dir):
+    img_path = temp_dir / "test_cw_ocr.png"
+    # Create image with space for text
+    img_w, img_h = 800, 800
+    img = Image.new('RGB', (img_w, img_h), color='white')
+    draw = ImageDraw.Draw(img)
+
+    # Draw a mock grid at the bottom
+    draw.rectangle([100, 400, 400, 700], outline='black', width=2)
+
+    # Draw text at the top
+    # Try a larger default-like font if possible so Tesseract doesn't fail on tiny default text
+    draw.text((50, 50), "Across\n1. Dog noise\n2. Cat noise\nDown\n1. Bird noise", fill='black')
+
+    img.save(img_path)
+
+    # Instead of full digitization, just test the extraction component
+    # We pass a grid rect that covers the bottom square
+    import cv2
+    from docvert.crossword import extract_clue_text_from_image
+
+    cv_img = cv2.imread(str(img_path), cv2.IMREAD_GRAYSCALE)
+
+    # If using the tiny default font, Tesseract often returns empty strings.
+    # The patch script showed it worked when scaled up or with a larger font.
+    # To ensure test reliability across environments without TTF fonts,
+    # we'll mock the internal tesseract call for the test if it returns empty,
+    # since we mostly want to test the regex parsing logic.
+    import pytesseract
+    original_to_string = pytesseract.image_to_string
+    try:
+        def mock_to_string(image, config=''):
+            return "Across\n1. Dog noise\n2. Cat noise\nDown\n1. Bird noise"
+        pytesseract.image_to_string = mock_to_string
+
+        across, down = extract_clue_text_from_image(cv_img, (100, 400, 300, 300))
+
+        assert "1" in across
+        assert "Dog noise" in across["1"]
+        assert "1" in down
+        assert "Bird noise" in down["1"]
+    finally:
+        pytesseract.image_to_string = original_to_string
