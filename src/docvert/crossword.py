@@ -266,7 +266,7 @@ def validate_grid(grid_data, rows, cols, start_issue_idx=1):
 def render_template(template_path, context):
     """Render a template using Jinja2."""
     template_dir = Path(template_path).parent
-    env = Environment(loader=FileSystemLoader(str(template_dir)))
+    env = Environment(loader=FileSystemLoader(str(template_dir)), autoescape=True)
     template = env.get_template(Path(template_path).name)
     return template.render(context)
 
