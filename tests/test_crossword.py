@@ -7,7 +7,8 @@ from PIL import Image, ImageDraw
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-from docvert.crossword import digitize_crossword_image, find_grid, process_grid, assign_clues
+from docvert.crossword import digitize_crossword_image, find_grid, process_grid, assign_clues, render_template
+from jinja2.exceptions import TemplateNotFound
 
 def generate_synthetic_crossword(filepath, rows, cols, blocked_cells):
     """
@@ -194,3 +195,14 @@ def test_digitize_review_targets(temp_dir):
         assert 'id="export-btn"' in html
         assert 'id="import-file"' in html
         assert 'data-id="cell-r0-c0"' in html
+
+def test_render_template_success(tmp_path):
+    template_file = tmp_path / "test.html"
+    template_file.write_text("Hello {{ name }}!")
+    rendered = render_template(str(template_file), {"name": "World"})
+    assert rendered == "Hello World!"
+
+def test_render_template_not_found(tmp_path):
+    template_file = tmp_path / "nonexistent.html"
+    with pytest.raises(TemplateNotFound):
+        render_template(str(template_file), {"name": "World"})
