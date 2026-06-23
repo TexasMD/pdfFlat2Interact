@@ -31,9 +31,6 @@
 </head>
 <body>
 <h1>{{ title }}</h1>
-<div class="actions">
-  <button id="export-btn">Export JSON</button>
-</div>
 <div class="container">
   <div class="grid" id="grid-container"></div>
   <div class="clues-container">
@@ -91,16 +88,6 @@
           updateSelection();
         });
       }
-
-      el.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        cellData.blocked = !cellData.blocked;
-        el.className = `cell ${cellData.blocked ? 'blocked' : 'open'}`;
-        if (cellData.blocked) {
-          if (el.querySelector('span')) el.querySelector('span').textContent = '';
-          el.classList.remove('selected', 'highlight');
-        }
-      });
 
       gridContainer.appendChild(el);
       rowCells.push({ el, data: cellData, inputSpan: el.querySelector('span') });
@@ -243,13 +230,6 @@
     if (selectedCell) break;
   }
 
-  document.getElementById('export-btn').addEventListener('click', () => {
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
-    const dlAnchorElem = document.createElement('a');
-    dlAnchorElem.setAttribute("href", dataStr);
-    dlAnchorElem.setAttribute("download", "crossword_updated.json");
-    dlAnchorElem.click();
-  });
 </script>
 </body>
 </html>
