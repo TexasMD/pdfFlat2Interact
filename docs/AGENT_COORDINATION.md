@@ -2,22 +2,41 @@
 
 ## Current Base
 
-Use `origin/repair/jules-restore` until it is merged. After merge, branch from `origin/main`.
+Branch repair work from `origin/main`.
 
 ## Active Task
 
-Interactive review workflow for crossword digitization.
+PR #2 Option B repair: fix OCR confidence parsing, traceability metadata, layout-role hard-gate heuristics, and block-coherence issue evidence.
 
-Owner: Jules
+Owner: Codex
+
+Current intent:
+
+- Patch the merged PR #2 runtime modules in place instead of reverting them.
+- Keep changes targeted to OCR/layout/validation helpers and their tests.
+- Preserve source/page/rendered-image traceability in every emitted OCR word, layout block, and validation issue.
+- Strengthen tests for decimal Tesseract confidences, factoid/sidebar classification, number-line visual references, and non-overlap merge-risk issue emission.
+- Do not expand beyond the approved first-pilot hard gates or generate student HTML.
+
+Current status:
+
+- Jules recommended Option B on PR #2.
+- Codex notified Jules that Codex will implement this repair to avoid competing patches.
+- Repair is implemented locally on `codex/pr2-option-b-repair`.
+- Targeted PR #2 tests pass: `8 passed`.
+- Full test suite passes: `19 passed`.
 
 ## Files Reserved For Active Task
 
-- `src/docvert/crossword.py`
-- `src/docvert/templates/review.html`
-- `src/docvert/templates/index.html`
-- `tests/test_crossword.py`
+- `docs/AGENT_COORDINATION.md`
+- `src/docvert/ocr.py`
+- `src/docvert/layout.py`
+- `src/docvert/validation.py`
+- `tests/test_ocr.py`
+- `tests/test_layout.py`
+- `tests/test_validation.py`
 
-Codex should not edit these files until Jules’s PR is reviewed unless explicitly asked.
+Jules and other collaborators should not edit these files until this repair branch is reviewed unless explicitly asked.
 
 ## Do Not Delete
 
