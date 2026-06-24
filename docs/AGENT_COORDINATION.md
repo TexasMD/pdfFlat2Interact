@@ -2,20 +2,20 @@
 
 ## Current Base
 
-- `origin/main` is currently `272adc9` (`Merge pull request #2...`).
-- The active repair branch is `codex/pr2-option-b-repair`; use PR #6 for the current pushed head.
+- `origin/main` is currently `a8d3df4` (`Merge pull request #6...`).
+- Local `main` is fast-forwarded to `origin/main`.
+- The PR #6 repair branch `codex/pr2-option-b-repair` has been merged.
 - The staged first-pilot branch is `codex/first-pilot-validation` at `0ec71f6`.
 
 ## Project Status
 
-Last verified: 2026-06-23.
+Last verified: 2026-06-24.
 
-- PR #6, `[codex] Repair PR2 OCR layout validation helpers`, is open as a draft against `main`.
-- PR #6 is currently mergeable and contains repair commit `b534aa4` plus project-status handoff updates.
-- PR #6 has no discussion comments yet.
+- PR #6, `[codex] Repair PR2 OCR layout validation helpers`, has been merged into `main`.
+- PR #6 merge commit: `a8d3df4`.
+- PR #6 included repair commit `b534aa4` plus project-status handoff updates.
 - Jules acknowledged the handoff on PR #2 and is not working a competing PR #2 repair.
-- PR #2, PR #3, PR #4, and PR #5 have been merged into `main`.
-- Local `main` is stale relative to `origin/main`; refresh before branching from `main`.
+- PR #2, PR #3, PR #4, PR #5, and PR #6 have been merged into `main`.
 - `codex/first-pilot-validation` contains Stage 1 through Stage 4 first-pilot work:
   - Stage 1: source manifest intake.
   - Stage 2: hard-gate page rendering.
@@ -26,41 +26,38 @@ Last verified: 2026-06-23.
 
 ## Active Task
 
-Project status update and PR #6 review handoff.
+Post-PR #6 project status update.
 
 Owner: Codex
 
 Current intent:
 
-- Keep collaborators aligned on the current branch/PR split.
-- Keep PR #6 as draft until it is reviewed.
+- Keep collaborators aligned after the PR #6 merge.
+- Make `main` the base for new repair or coordination branches.
+- Preserve the staged first-pilot branch until it is deliberately reconciled with updated `main`.
 - Do not expand beyond the approved first-pilot hard gates or generate student HTML.
 
 Current status:
 
-- Jules recommended Option B on PR #2.
-- Codex notified Jules that Codex will implement this repair to avoid competing patches.
-- Repair is implemented and pushed on `codex/pr2-option-b-repair`.
-- Draft PR #6 is open for review: `https://github.com/TexasMD/pdfFlat2Interact/pull/6`.
+- Jules recommended Option B on PR #2, then acknowledged Codex's repair handoff.
+- PR #6 implemented the PR #2 Option B repair and has been merged.
 - Targeted PR #2 tests pass: `8 passed`.
 - Full test suite passes: `19 passed`.
 
-## Next Review Step
+## Next Review Or Decision Step
 
-PR #6 needs human review before merge. Reviewer-facing choices must include:
+No PR #6 review remains pending. The next project decision should present these options:
 
-- Approve PR #6 and merge after final test confirmation.
-- Request targeted changes on PR #6.
-- Keep PR #6 draft and ask for another pass.
-- Close PR #6 and choose a different repair strategy.
+- Proceed with reconciling `codex/first-pilot-validation` onto updated `main`, then start Stage 5.
+- Audit the merged PR #6 changes once more before reconciling first-pilot work.
+- Ask Jules or another collaborator to review the merged PR #6 repair before Stage 5.
+- Pause implementation and revise the project plan/status first.
 
-Review notes must include a freeform suggestion/comment field in the PR review or issue comment.
+Any review/decision note must include explicit option selection plus a freeform suggestion/comment field.
 
 ## Recommended Next Implementation Step
 
-After PR #6 is reviewed and merged or explicitly deferred:
-
-1. Reconcile `codex/first-pilot-validation` with updated `origin/main`.
+1. Reconcile `codex/first-pilot-validation` with updated `origin/main` at `a8d3df4`.
 2. Resume the staged pipeline at Stage 5: OCR-vs-PDF text comparison for the three first-pilot hard-gate pages.
 3. Preserve manifest-backed source/page/rendered-image traceability in every comparison and issue artifact.
 
@@ -68,14 +65,7 @@ After PR #6 is reviewed and merged or explicitly deferred:
 
 - `docs/AGENT_COORDINATION.md`
 
-No Jules-owned files are currently reserved. Avoid competing edits to the PR #6 repair files until PR #6 review is complete unless explicitly asked:
-
-- `src/docvert/ocr.py`
-- `src/docvert/layout.py`
-- `src/docvert/validation.py`
-- `tests/test_ocr.py`
-- `tests/test_layout.py`
-- `tests/test_validation.py`
+No Jules-owned files are currently reserved.
 
 ## Do Not Delete
 
