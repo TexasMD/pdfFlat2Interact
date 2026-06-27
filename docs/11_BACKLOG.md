@@ -63,15 +63,15 @@ Project: `docvert`
 
 | Priority | ID | Task | Notes |
 |---:|---|---|---|
-| P1 | V4-001 | Select OCR strategy. | Must support visible-text verification; bounding boxes strongly preferred. |
-| P1 | V4-002 | Select layout/block detection strategy. | Hybrid PDF text boxes + OCR boxes + visual segmentation likely needed. |
+| P1 | V4-001 | Select OCR strategy. | Done (PR #2): selected PyTesseract. |
+| P1 | V4-002 | Select layout/block detection strategy. | Done (PR #2): selected OpenCV morphological operations. |
 | P1 | V4-003 | Implement page renderer. | Rendered page image is canonical visual truth. |
 | P1 | V4-004 | Implement embedded text extractor. | Treat output as hypothesis only. |
-| P1 | V4-005 | Implement OCR extraction. | Required for visible-text verification and symbol/label checks. |
+| P1 | V4-005 | Implement OCR extraction. | Done (Pending PR #6 review): implemented using PyTesseract. |
 | P1 | V4-006 | Implement OCR-vs-PDF-text comparison. | Must flag gaps, symbol disagreements, item-count differences, and reading-order problems. |
-| P1 | V4-007 | Implement layout block records. | Must include source/page, bbox, source methods, role, confidence, visual features, nearby blocks, issues. |
-| P1 | V4-008 | Implement block role classifier. | Use durable roles such as instruction, exercise items, answer bank, visual reference, factoid, footer, unknown. |
-| P1 | V4-009 | Implement block coherence validator. | Detect instruction/factoid merges and impossible reading order. |
+| P1 | V4-007 | Implement layout block records. | Done (Pending PR #6 review): tracking source, page, ID, and bbox. |
+| P1 | V4-008 | Implement block role classifier. | Done (Pending PR #6 review): heuristic classification. |
+| P1 | V4-009 | Implement block coherence validator. | Done (Pending PR #6 review): detects merges and reading order issues. |
 | P1 | V4-010 | Map issue writer to `03_ISSUE_TAXONOMY_V4.md`. | Required fields, severity, `blocks_student_html`, status, evidence, and traceability must match V4. |
 | P1 | V4-011 | Map validation stages to `04_VALIDATION_RULES_V4.md`. | Pilot run must follow V4 validation order and page release-category model. |
 | P1 | V4-012 | Load or emit correction memory using V4 schema/rules. | Use `05_CORRECTION_MEMORY_SCHEMA_V4.json` and `06_CORRECTION_MEMORY_RULES_V4.md`; no broad silent corrections. |

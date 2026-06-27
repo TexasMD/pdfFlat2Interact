@@ -6,18 +6,25 @@ Use `origin/repair/jules-restore` until it is merged. After merge, branch from `
 
 ## Active Task
 
-Interactive review workflow for crossword digitization.
+1. Core extraction modules (OCR, layout, validation) Option B repair (PR #6).
+Owner: Codex
 
+2. Update project status and documentation.
 Owner: Jules
 
 ## Files Reserved For Active Task
 
-- `src/docvert/crossword.py`
-- `src/docvert/templates/review.html`
-- `src/docvert/templates/index.html`
-- `tests/test_crossword.py`
+**For Codex (PR #6):**
+- `src/docvert/layout.py`
+- `src/docvert/ocr.py`
+- `src/docvert/validation.py`
+- `tests/test_layout.py`
+- `tests/test_ocr.py`
 
-Codex should not edit these files until Jules’s PR is reviewed unless explicitly asked.
+**For Jules:**
+- `docs/10_DECISION_LOG.md`
+- `docs/11_BACKLOG.md`
+- `docs/AGENT_COORDINATION.md`
 
 ## Do Not Delete
 

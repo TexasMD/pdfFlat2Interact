@@ -3,4 +3,3 @@ Pillow
 numpy
 opencv-python-headless
 Jinja2
-pytesseract
