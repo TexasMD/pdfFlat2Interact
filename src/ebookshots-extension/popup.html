@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Ebook Screenshot Selector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="logo">📖</div>
+      <h1>Ebookshot Selector</h1>
+    </div>
+
+    <!-- Mode Configuration -->
+    <div class="section">
+      <label class="section-title">Scan Mode</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="scanMode" value="slideshow" checked>
+          <div class="radio-content">
+            <span class="option-title">Slideshow (Recommended)</span>
+            <span class="option-desc">Open first photo in fullscreen; extension auto-pages and selects.</span>
+          </div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="scanMode" value="grid">
+          <div class="radio-content">
+            <span class="option-title">Grid View</span>
+            <span class="option-desc">Scan currently visible photos in the grid.</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Engine Configuration -->
+    <div class="section">
+      <label class="section-title">Classification Method</label>
+      <div class="radio-group">
+        <label class="radio-option">
+          <input type="radio" name="classMethod" value="gemini" checked>
+          <div class="radio-content">
+            <span class="option-title">Gemini Vision AI (Recommended)</span>
+            <span class="option-desc">Perfect accuracy using Gemini 1.5 Flash. Requires API key.</span>
+          </div>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="classMethod" value="local">
+          <div class="radio-content">
+            <span class="option-title">Visual Canvas Heuristics (Local)</span>
+            <span class="option-desc">Analyzes layout & text patterns locally (free, no API key).</span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Gemini API Key Input (conditional) -->
+    <div id="geminiConfig" class="section">
+      <label for="apiKey" class="section-title">Gemini API Key</label>
+      <div class="input-container">
+        <input type="password" id="apiKey" placeholder="AIzaSy..." />
+        <button id="saveKeyBtn" class="secondary-btn">Save</button>
+      </div>
+      <div style="margin-top: 10px; display: flex; align-items: center; gap: 6px;">
+        <input type="checkbox" id="preFilter" checked />
+        <label for="preFilter" style="font-size: 11px; font-weight: 600; color: var(--text-primary); cursor: pointer; user-select: none;">Local Pre-filtering</label>
+      </div>
+      <p class="help-text" style="margin-top: 4px;">Locally filters out obvious non-ebook images before calling Gemini, reducing API usage and costs by up to 90%.</p>
+    </div>
+
+    <!-- Status & Progress -->
+    <div class="status-box">
+      <div class="status-row">
+        <span>Status:</span>
+        <span id="statusText" class="status-val idle">Ready</span>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-num" id="scannedCount">0</span>
+          <span class="stat-lbl">Scanned</span>
+        </div>
+        <div class="stat-card match">
+          <span class="stat-num" id="matchCount">0</span>
+          <span class="stat-lbl">Selected</span>
+        </div>
+      </div>
+      <div class="progress-bar-container">
+        <div id="progressBar" class="progress-bar" style="width: 0%;"></div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button id="startBtn" class="primary-btn">Start Scanning</button>
+      <button id="stopBtn" class="danger-btn" disabled>Stop</button>
+    </div>
+
+    <div class="actions" style="margin-top: 10px;">
+      <button id="downloadOcrBtn" class="secondary-btn" style="width: 100%; display: none;">Download OCR Text File</button>
+    </div>
+
+    <!-- Help Instructions -->
+    <div class="help-section">
+      <h3>Instructions:</h3>
+      <ol>
+        <li>Search for <strong>"screenshot"</strong> on Google Photos.</li>
+        <li class="slideshow-instr">Click on the first photo to open it in fullscreen.</li>
+        <li>Open this extension and click <strong>Start Scanning</strong>.</li>
+        <li>When done, click the native <strong>"+" (Add to album)</strong> button on Google Photos.</li>
+      </ol>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
